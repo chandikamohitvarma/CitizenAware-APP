@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "CitizenAware 2026",
+    "slug": "citizenaware-2026",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "citizenaware",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "description": "Your Gateway to Government Schemes - 2026 Edition",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.citizenaware.app"
+    },
+    "android": {
+      "package": "com.citizenaware.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": ["expo-router", "expo-font", "expo-web-browser"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
