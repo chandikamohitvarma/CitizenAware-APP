@@ -193,17 +193,7 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Category quick-links */}
-            <View style={styles.categories}>
-              {CATEGORIES.map(({ icon: Icon, label, color }) => (
-                <TouchableOpacity key={label} style={styles.catItem} onPress={() => handleCategoryPress(label)}>
-                  <View style={[styles.catIcon, { backgroundColor: color + '18' }]}>
-                    <Icon size={22} color={color} strokeWidth={1.8} />
-                  </View>
-                  <Text style={styles.catLabel}>{label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+
 
             {/* Create account */}
             <View style={styles.registerRow}>
