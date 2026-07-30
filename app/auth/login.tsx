@@ -96,17 +96,11 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const { login, loginWithGoogleAccount, isAuthenticated, error: authError } = useAuthStore();
 
-  const handleGoogleLogin = () => {
-    setError('');
-    setShowGoogleModal(true);
-  };
-
-  const handleSelectGoogleAccount = async (selectedEmail: string, selectedName?: string) => {
-    setShowGoogleModal(false);
+  const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
     setError('');
     try {
-      const success = await loginWithGoogleAccount(selectedEmail, selectedName);
+      const success = await loginWithGoogle();
       if (success) {
         router.replace('/(tabs)');
       } else {
@@ -286,86 +280,6 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-      {/* ─── Google Account Selector Modal ─── */}
-      <Modal
-        visible={showGoogleModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowGoogleModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowGoogleModal(false)}
-        >
-          <View style={styles.googleModalContent} onStartShouldSetResponder={() => true}>
-            {/* Modal Header */}
-            <View style={styles.modalHeader}>
-              <GoogleIcon />
-              <Text style={styles.modalTitle}>Choose an account</Text>
-              <Text style={styles.modalSub}>to continue to CitizenAware</Text>
-            </View>
-
-            {/* Default Accounts */}
-            <TouchableOpacity
-              style={styles.accountCard}
-              onPress={() => handleSelectGoogleAccount('rahul.varma@gmail.com', 'Rahul Varma')}
-            >
-              <View style={[styles.avatar, { backgroundColor: '#4285F4' }]}>
-                <Text style={styles.avatarText}>R</Text>
-              </View>
-              <View style={styles.accountInfo}>
-                <Text style={styles.accountName}>Rahul Varma</Text>
-                <Text style={styles.accountEmail}>rahul.varma@gmail.com</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.accountCard}
-              onPress={() => handleSelectGoogleAccount('ananya.citizen@gmail.com', 'Ananya Sharma')}
-            >
-              <View style={[styles.avatar, { backgroundColor: '#34A853' }]}>
-                <Text style={styles.avatarText}>A</Text>
-              </View>
-              <View style={styles.accountInfo}>
-                <Text style={styles.accountName}>Ananya Sharma</Text>
-                <Text style={styles.accountEmail}>ananya.citizen@gmail.com</Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* Custom Google Email input */}
-            <View style={styles.customEmailBox}>
-              <Text style={styles.customEmailLabel}>Use another Google Email:</Text>
-              <View style={styles.customInputRow}>
-                <TextInput
-                  style={styles.customEmailInput}
-                  placeholder="name@gmail.com"
-                  placeholderTextColor={Colors.gray.icon}
-                  value={customGoogleEmail}
-                  onChangeText={setCustomGoogleEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity
-                  style={[styles.customGoBtn, !customGoogleEmail && styles.btnDisabled]}
-                  disabled={!customGoogleEmail}
-                  onPress={() => handleSelectGoogleAccount(customGoogleEmail)}
-                >
-                  <Text style={styles.customGoText}>Sign In</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Cancel Button */}
-            <TouchableOpacity
-              style={styles.cancelModalBtn}
-              onPress={() => setShowGoogleModal(false)}
-            >
-              <Text style={styles.cancelModalText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </LinearGradient>
   );
 }
