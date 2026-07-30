@@ -94,7 +94,7 @@ export default function LoginScreen() {
   const [showGoogleModal, setShowGoogleModal] = useState(false);
   const [customGoogleEmail, setCustomGoogleEmail] = useState('');
   const [error, setError] = useState('');
-  const { login, loginWithGoogleAccount, isAuthenticated, error: authError } = useAuthStore();
+  const { login, loginWithGoogle, isAuthenticated, error: authError } = useAuthStore();
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
