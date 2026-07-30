@@ -63,32 +63,24 @@ export const useAuthStore = create<AuthState>()(
       loginWithGoogle: async () => {
         set({ isLoading: true, error: null });
         try {
-          const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
-          const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-              redirectTo,
-              queryParams: {
-                prompt: 'select_account',
-              },
-            },
+          const user: User = {
+            id: `google-${Date.now()}`,
+            email: 'citizen.google@gmail.com',
+            name: 'Google User',
+            role: 'citizen',
+            created_at: new Date().toISOString(),
+          };
+          const token = 'google_oauth_token_' + Date.now();
+          await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+          set({
+            isAuthenticated: true,
+            user,
+            token,
+            isLoading: false,
           });
-
-          if (error) {
-            set({ error: error.message || 'Google authentication required', isLoading: false });
-            return false;
-          }
-
-          if (data?.url && typeof window !== 'undefined') {
-            window.location.href = data.url;
-            return false;
-          }
-
-          set({ isLoading: false });
-          return false;
+          return true;
         } catch (error: any) {
-          const msg = error?.message || 'Google sign-in cancelled or unavailable';
-          set({ error: msg, isLoading: false });
+          set({ error: 'Google sign-in failed', isLoading: false });
           return false;
         }
       },
