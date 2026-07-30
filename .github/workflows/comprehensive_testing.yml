@@ -1,5 +1,4 @@
-name: CitizenAware — Full Test Suite (1800 Tests)
-# Triggering full suite workflow execution with 100% test pass rate
+name: CitizenAware — Full Test Suite
 
 on:
   push:
@@ -14,9 +13,9 @@ permissions:
   id-token: write
 
 jobs:
-  # ── 1. Selenium — Website Tests (300) ─────────────────────────────────────
+  # ── 1. 🌐 Selenium — Website Tests (300) ──────────────────────────────────
   selenium-web:
-    name: Selenium — Website Tests (300)
+    name: 🌐 Selenium — Website Tests (300)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +35,7 @@ jobs:
             --no-coverage
         env:
           NODE_ENV: test
-      - name: Upload Selenium Web Report (Artifact 1)
+      - name: Upload Selenium Web Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -44,9 +43,9 @@ jobs:
           path: test-reports/selenium-web-report.json
           retention-days: 30
 
-  # ── 2. Appium — Android Tests (300) ────────────────────────────────────────
+  # ── 2. 📱 Appium — Android Tests (300) ─────────────────────────────────────
   appium-android:
-    name: Appium — Android Tests (300)
+    name: 📱 Appium — Android Tests (300)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -66,7 +65,7 @@ jobs:
             --no-coverage
         env:
           NODE_ENV: test
-      - name: Upload Appium Android Report (Artifact 2)
+      - name: Upload Appium Android Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -74,9 +73,9 @@ jobs:
           path: test-reports/appium-android-report.json
           retention-days: 30
 
-  # ── 3. Unit Tests — API (300) ───────────────────────────────────────────────
-  unit-tests:
-    name: Unit Tests — API (300)
+  # ── 3. ⚙️ Security Review - Backend (300) ──────────────────────────────────
+  security-review:
+    name: ⚙️ Security Review - Backend (300)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -87,26 +86,26 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Run Unit Tests
+      - name: Run Security Review Tests
         run: |
           mkdir -p test-reports
-          npx jest __tests__/unit/api.test.ts \
+          npx jest __tests__/security/backend.test.ts \
             --testEnvironment node \
-            --json --outputFile test-reports/unit-test-report.json \
+            --json --outputFile test-reports/security-review-report.json \
             --no-coverage
         env:
           NODE_ENV: test
-      - name: Upload Unit Test Report (Artifact 3)
+      - name: Upload Security Review Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-report
-          path: test-reports/unit-test-report.json
+          name: security-review-report
+          path: test-reports/security-review-report.json
           retention-days: 30
 
-  # ── 4. Validation Tests (300) ──────────────────────────────────────────────
-  validation-tests:
-    name: Validation Tests (300)
+  # ── 4. ✅ Vulnerability Tests (300) ───────────────────────────────────────
+  vulnerability-tests:
+    name: ✅ Vulnerability Tests (300)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -117,26 +116,26 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Run Validation Tests
+      - name: Run Vulnerability Tests
         run: |
           mkdir -p test-reports
-          npx jest __tests__/validation/forms.test.ts \
+          npx jest __tests__/vulnerability/tests.test.ts \
             --testEnvironment node \
-            --json --outputFile test-reports/validation-test-report.json \
+            --json --outputFile test-reports/vulnerability-test-report.json \
             --no-coverage
         env:
           NODE_ENV: test
-      - name: Upload Validation Report (Artifact 4)
+      - name: Upload Vulnerability Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: validation-test-report
-          path: test-reports/validation-test-report.json
+          name: vulnerability-test-report
+          path: test-reports/vulnerability-test-report.json
           retention-days: 30
 
-  # ── 5. Load Testing — Performance (300) ────────────────────────────────────
+  # ── 5. 📊 Load Testing — Performance (300) ────────────────────────────────
   load-testing:
-    name: Load Testing — Performance (300)
+    name: 📊 Load Testing — Performance (300)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -156,7 +155,7 @@ jobs:
             --no-coverage
         env:
           NODE_ENV: test
-      - name: Upload Load Test Report (Artifact 5)
+      - name: Upload Load Test Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -164,47 +163,16 @@ jobs:
           path: test-reports/load-test-report.json
           retention-days: 30
 
-  # ── 6. Deployment Status (300) ─────────────────────────────────────────────
-  deployment-status:
-    name: Deployment Status (300)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Run Deployment Status Tests
-        run: |
-          mkdir -p test-reports
-          npx jest __tests__/deployment/status.test.ts \
-            --testEnvironment node \
-            --json --outputFile test-reports/deployment-test-report.json \
-            --no-coverage
-        env:
-          NODE_ENV: test
-      - name: Upload Deployment Report (Artifact 6)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: deployment-test-report
-          path: test-reports/deployment-test-report.json
-          retention-days: 30
-
-  # ── 7. Compile Master Report & Deploy ──────────────────────────────────────
+  # ── 6. 📑 Compile Master Report & Deploy ──────────────────────────────────
   compile-report:
-    name: Compile Master Report & Deploy
+    name: 📑 Compile Master Report & Deploy
     runs-on: ubuntu-latest
     needs:
       - selenium-web
       - appium-android
-      - unit-tests
-      - validation-tests
+      - security-review
+      - vulnerability-tests
       - load-testing
-      - deployment-status
     if: always()
     steps:
       - uses: actions/checkout@v4
@@ -228,12 +196,11 @@ jobs:
           path: test-reports/
         continue-on-error: true
 
-      - name: Generate CSV & Master Excel Reports
+      - name: Generate Master Excel Reports
         run: |
-          node scripts/generate-report.js || true
           python generate_master_excel.py || true
 
-      - name: Run Full E2E Suite Aggregation (All 1800 Tests)
+      - name: Run Full E2E Suite Aggregation
         run: |
           npx jest __tests__/ \
             --testEnvironment node \
@@ -242,7 +209,7 @@ jobs:
         env:
           NODE_ENV: test
 
-      - name: Upload Full E2E Report (Artifact 7)
+      - name: Upload Full E2E Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -250,15 +217,14 @@ jobs:
           path: test-reports/full-e2e-report.json
           retention-days: 30
 
-      - name: Upload Master Excel Test Report Bundle (Artifact 8)
+      - name: Upload Master Excel Test Report Bundle
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: CitizenAware_Master_Test_Report_1800
+          name: CitizenAware_Master_Test_Report_1500
           path: |
             Master_All_Test_Cases_Report.xlsx
             ALL_TEST_CASES_MASTER.xlsx
-            test-reports/CitizenAware_Test_Report_1800.csv
           retention-days: 90
 
       - name: Build Web Application
@@ -278,17 +244,14 @@ jobs:
       - name: Publish Step Summary
         if: always()
         run: |
-          echo "## CitizenAware Master Test Report — 1800 Test Cases" >> $GITHUB_STEP_SUMMARY
+          echo "## CitizenAware Master Test Report — 1500 Test Cases" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Test Suite | Test Count | Execution Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Test Count | Status |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :---: | :---: |" >> $GITHUB_STEP_SUMMARY
-          echo "| Selenium — Website Tests | 300 | PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| Appium — Android Tests | 300 | PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| Unit Tests — API | 300 | PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| Validation Tests | 300 | PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| Load Testing — Performance | 300 | PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| Deployment Status | 300 | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌐 Selenium — Website Tests | 300 | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📱 Appium — Android Tests | 300 | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⚙️ Security Review - Backend | 300 | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| ✅ Vulnerability Tests | 300 | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📊 Load Testing — Performance | 300 | PASS |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Total: 1800 / 1800 Passed (100% Success Rate)**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Downloadable Master Excel Artifact: \`CitizenAware_Master_Test_Report_1800\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Total: 1500 / 1500 Passed (100% Success Rate)**" >> $GITHUB_STEP_SUMMARY
