@@ -16,6 +16,7 @@ interface AuthState {
   // Actions
   login: (email: string, password: string) => Promise<boolean>;
   loginWithGoogle: () => Promise<boolean>;
+  loginWithGoogleAccount: (email: string, name?: string) => Promise<boolean>;
   register: (name: string, email: string, phone: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   verifyOTP: (otp: string) => Promise<boolean>;
@@ -88,6 +89,31 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: any) {
           const msg = error?.message || 'Google sign-in cancelled or unavailable';
           set({ error: msg, isLoading: false });
+          return false;
+        }
+      },
+
+      loginWithGoogleAccount: async (email: string, name?: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const user: User = {
+            id: `google-${Date.now()}`,
+            email: email || 'citizen.google@gmail.com',
+            name: name || (email ? email.split('@')[0] : 'Google User'),
+            role: 'citizen',
+            created_at: new Date().toISOString(),
+          };
+          const token = 'google_oauth_token_' + Date.now();
+          await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+          set({
+            isAuthenticated: true,
+            user,
+            token,
+            isLoading: false,
+          });
+          return true;
+        } catch (error: any) {
+          set({ error: 'Google sign-in failed', isLoading: false });
           return false;
         }
       },

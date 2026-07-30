@@ -7,6 +7,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -89,14 +91,22 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [customGoogleEmail, setCustomGoogleEmail] = useState('');
   const [error, setError] = useState('');
-  const { login, loginWithGoogle, isAuthenticated, error: authError } = useAuthStore();
+  const { login, loginWithGoogleAccount, isAuthenticated, error: authError } = useAuthStore();
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
+    setError('');
+    setShowGoogleModal(true);
+  };
+
+  const handleSelectGoogleAccount = async (selectedEmail: string, selectedName?: string) => {
+    setShowGoogleModal(false);
     setIsGoogleLoading(true);
     setError('');
     try {
-      const success = await loginWithGoogle();
+      const success = await loginWithGoogleAccount(selectedEmail, selectedName);
       if (success) {
         router.replace('/(tabs)');
       } else {
@@ -276,6 +286,86 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+      {/* ─── Google Account Selector Modal ─── */}
+      <Modal
+        visible={showGoogleModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGoogleModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowGoogleModal(false)}
+        >
+          <View style={styles.googleModalContent} onStartShouldSetResponder={() => true}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <GoogleIcon />
+              <Text style={styles.modalTitle}>Choose an account</Text>
+              <Text style={styles.modalSub}>to continue to CitizenAware</Text>
+            </View>
+
+            {/* Default Accounts */}
+            <TouchableOpacity
+              style={styles.accountCard}
+              onPress={() => handleSelectGoogleAccount('rahul.varma@gmail.com', 'Rahul Varma')}
+            >
+              <View style={[styles.avatar, { backgroundColor: '#4285F4' }]}>
+                <Text style={styles.avatarText}>R</Text>
+              </View>
+              <View style={styles.accountInfo}>
+                <Text style={styles.accountName}>Rahul Varma</Text>
+                <Text style={styles.accountEmail}>rahul.varma@gmail.com</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.accountCard}
+              onPress={() => handleSelectGoogleAccount('ananya.citizen@gmail.com', 'Ananya Sharma')}
+            >
+              <View style={[styles.avatar, { backgroundColor: '#34A853' }]}>
+                <Text style={styles.avatarText}>A</Text>
+              </View>
+              <View style={styles.accountInfo}>
+                <Text style={styles.accountName}>Ananya Sharma</Text>
+                <Text style={styles.accountEmail}>ananya.citizen@gmail.com</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Custom Google Email input */}
+            <View style={styles.customEmailBox}>
+              <Text style={styles.customEmailLabel}>Use another Google Email:</Text>
+              <View style={styles.customInputRow}>
+                <TextInput
+                  style={styles.customEmailInput}
+                  placeholder="name@gmail.com"
+                  placeholderTextColor={Colors.gray.icon}
+                  value={customGoogleEmail}
+                  onChangeText={setCustomGoogleEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  style={[styles.customGoBtn, !customGoogleEmail && styles.btnDisabled]}
+                  disabled={!customGoogleEmail}
+                  onPress={() => handleSelectGoogleAccount(customGoogleEmail)}
+                >
+                  <Text style={styles.customGoText}>Sign In</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Cancel Button */}
+            <TouchableOpacity
+              style={styles.cancelModalBtn}
+              onPress={() => setShowGoogleModal(false)}
+            >
+              <Text style={styles.cancelModalText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -497,4 +587,124 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   footerText: { fontSize: 12, color: Colors.gray.icon, fontWeight: '500' },
+
+  /* ── Google Modal Styles ── */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  googleModalContent: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: Colors.dark,
+    marginTop: 10,
+  },
+  modalSub: {
+    fontSize: 13,
+    color: Colors.gray.text,
+    marginTop: 2,
+  },
+  accountCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 10,
+    backgroundColor: '#F8FAFC',
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  accountInfo: {
+    flex: 1,
+  },
+  accountName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.dark,
+  },
+  accountEmail: {
+    fontSize: 12,
+    color: Colors.gray.text,
+  },
+  customEmailBox: {
+    marginTop: 10,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  customEmailLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.gray.text,
+    marginBottom: 8,
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  customEmailInput: {
+    flex: 1,
+    height: 42,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: Colors.dark,
+    backgroundColor: '#FFFFFF',
+  },
+  customGoBtn: {
+    backgroundColor: Colors.primary.blue,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  customGoText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  cancelModalBtn: {
+    marginTop: 16,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  cancelModalText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.gray.icon,
+  },
 });
