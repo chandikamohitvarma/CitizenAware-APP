@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { User } from '@/types';
 import { getCurrentUser, login as apiLogin, register as apiRegister } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -61,15 +62,32 @@ export const useAuthStore = create<AuthState>()(
       loginWithGoogle: async () => {
         set({ isLoading: true, error: null });
         try {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          set({
-            isAuthenticated: true,
-            user: null,
-            isLoading: false,
+          const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo,
+              queryParams: {
+                prompt: 'select_account',
+              },
+            },
           });
-          return true;
-        } catch (error) {
-          set({ error: 'Google sign-in failed', isLoading: false });
+
+          if (error) {
+            set({ error: error.message || 'Google authentication required', isLoading: false });
+            return false;
+          }
+
+          if (data?.url && typeof window !== 'undefined') {
+            window.location.href = data.url;
+            return false;
+          }
+
+          set({ isLoading: false });
+          return false;
+        } catch (error: any) {
+          const msg = error?.message || 'Google sign-in cancelled or unavailable';
+          set({ error: msg, isLoading: false });
           return false;
         }
       },
