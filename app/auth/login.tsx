@@ -66,7 +66,16 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login, error: authError } = useAuthStore();
+  const { login, isAuthenticated, error: authError } = useAuthStore();
+
+  const handleCategoryPress = (label: string) => {
+    const cleanLabel = label.replace('\n', ' ');
+    if (!isAuthenticated) {
+      setError(`Please sign in to access ${cleanLabel}`);
+      return;
+    }
+    router.push('/(tabs)/schemes');
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -187,7 +196,7 @@ export default function LoginScreen() {
             {/* Category quick-links */}
             <View style={styles.categories}>
               {CATEGORIES.map(({ icon: Icon, label, color }) => (
-                <TouchableOpacity key={label} style={styles.catItem} onPress={() => router.push('/(tabs)/schemes')}>
+                <TouchableOpacity key={label} style={styles.catItem} onPress={() => handleCategoryPress(label)}>
                   <View style={[styles.catIcon, { backgroundColor: color + '18' }]}>
                     <Icon size={22} color={color} strokeWidth={1.8} />
                   </View>

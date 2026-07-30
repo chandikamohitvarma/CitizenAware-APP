@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, router } from 'expo-router';
 import { View, StyleSheet, Platform } from 'react-native';
 import { Hop as Home, FileText, MessageCircle, Bell, User } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,9 +10,15 @@ import { useEffect, useState } from 'react';
 import { useNotificationStore } from '@/store/notificationStore';
 
 export default function TabLayout() {
-  const { user, token } = useAuthStore();
+  const { user, token, isAuthenticated } = useAuthStore();
   const storeNotifs = useNotificationStore(state => state.notifications);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/auth/login');
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const fetchUnread = async () => {
