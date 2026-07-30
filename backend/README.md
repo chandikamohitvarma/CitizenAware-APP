@@ -1,0 +1,1 @@
+# Backend Service\n\nThis backend runs a FastAPI app for the CitizenAware project.\n\n## Setup\n1. Create `backend/.env` with your database URL.\n2. Install dependencies: `python -m pip install -r requirements.txt`\n3. Run: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`\n

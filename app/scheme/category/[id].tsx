@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { Header } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { getSchemes } from '@/lib/api';
 
 interface Scheme {
   id: string;
@@ -38,12 +38,12 @@ export default function CategorySchemesScreen() {
   const loadSchemesByCategory = async () => {
     try {
       setLoading(true);
-      const { data } = await supabase
-        .from('schemes')
-        .select('*')
-        .eq('category', id || name || '');
+      const data = await getSchemes();
+      const filtered = (data || []).filter(
+        (scheme: Scheme) => scheme.category === (id || name || '')
+      );
 
-      setSchemes(data || []);
+      setSchemes(filtered);
     } catch (error) {
       console.error('Error loading schemes:', error);
     } finally {

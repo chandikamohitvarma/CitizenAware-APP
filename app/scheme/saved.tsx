@@ -6,7 +6,7 @@ import { Colors } from '@/constants/colors';
 import { Header } from '@/components/ui';
 import { useSchemeStore } from '@/store/schemeStore';
 import { Bookmark } from 'lucide-react-native';
-import { supabase } from '@/lib/supabase';
+import { getSchemes } from '@/lib/api';
 
 interface Scheme {
   id: string;
@@ -34,12 +34,11 @@ export default function SavedSchemesScreen() {
         return;
       }
 
-      const { data } = await supabase
-        .from('schemes')
-        .select('*')
-        .in('id', savedSchemes);
-
-      setSchemes(data || []);
+      const data = await getSchemes();
+      const filtered = (data || []).filter((scheme: Scheme) =>
+        savedSchemes.includes(scheme.id)
+      );
+      setSchemes(filtered);
     } catch (error) {
       console.error('Error loading saved schemes:', error);
     } finally {

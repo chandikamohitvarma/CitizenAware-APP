@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
 import { AppButton, AppInput, Logo } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store/authStore';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -26,6 +26,7 @@ export default function RegisterScreen() {
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [emailError, setEmailError] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const { register, error: authError } = useAuthStore();
 
   const isGmail = (value: string) => /@gmail\.com$/i.test(value.trim());
   const isTenDigitPhone = (value: string) => /^\d{10}$/.test(value.replace(/\s/g, ''));
@@ -84,22 +85,13 @@ export default function RegisterScreen() {
     setIsLoading(true);
 
     try {
-      const { data, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { name, phone } },
-      });
-
-      if (authError) {
-        setError(authError.message || 'Registration failed');
+      const success = await register(name, email, phone, password);
+      if (!success) {
+        setError(authError || 'Registration failed. Please try again.');
         return;
       }
-
-      if (data.user) {
-        await supabase.auth.signOut();
-        setSuccess('Account created successfully! Please sign in to continue.');
-        setTimeout(() => router.replace('/auth/login'), 1500);
-      }
+      setSuccess('Account created successfully! Please sign in to continue.');
+      setTimeout(() => router.replace('/auth/login'), 1500);
     } catch {
       setError('An error occurred. Please try again.');
     } finally {

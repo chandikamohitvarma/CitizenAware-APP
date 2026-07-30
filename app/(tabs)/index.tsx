@@ -14,7 +14,7 @@ import { Search, Bell, ChevronRight, TrendingUp, Clock, Sparkles, FileText, Circ
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
-import { supabase } from '@/lib/supabase';
+import { getSchemes, getApplications, getNotifications } from '@/lib/api';
 
 interface Scheme {
   id: string;
@@ -25,11 +25,12 @@ interface Scheme {
 }
 
 export default function HomeScreen() {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [applications, setApplications] = useState({ applied: 0, approved: 0, pending: 0 });
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -39,26 +40,24 @@ export default function HomeScreen() {
     try {
       setLoading(true);
 
-      // Fetch featured schemes
-      const { data: schemesData } = await supabase
-        .from('schemes')
-        .select('id, name, description, category, featured')
-        .eq('featured', true)
-        .limit(6);
-
+      const schemesData = await getSchemes();
       setSchemes(schemesData || []);
 
-      // Fetch user applications stats
-      const { data: appData } = await supabase
-        .from('applications')
-        .select('status');
-
-      if (appData) {
+      if (token) {
+        const appData = (await getApplications(token)) as Array<{ status: string }>;
         setApplications({
           applied: appData.length,
           approved: appData.filter(a => a.status === 'approved').length,
-          pending: appData.filter(a => a.status === 'submitted').length,
+          pending: appData.filter((a) => a.status === 'submitted').length,
         });
+
+        try {
+          const notifs = await getNotifications(token);
+          const unread = (notifs || []).filter((n: { read?: boolean }) => !n.read).length;
+          setUnreadCount(unread);
+        } catch (err) {
+          setUnreadCount(0);
+        }
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -73,9 +72,27 @@ export default function HomeScreen() {
   }, []);
 
   const quickStats = [
-    { label: 'Applied', value: applications.applied.toString(), icon: FileText, color: Colors.primary.blue },
-    { label: 'Approved', value: applications.approved.toString(), icon: CheckCircle2, color: Colors.success },
-    { label: 'Pending', value: applications.pending.toString(), icon: Clock, color: Colors.warning },
+    {
+      label: 'Applied',
+      value: applications.applied.toString(),
+      icon: FileText,
+      color: Colors.primary.blue,
+      onPress: () => router.push('/application/tracking'),
+    },
+    {
+      label: 'Approved',
+      value: applications.approved.toString(),
+      icon: CheckCircle2,
+      color: Colors.success,
+      onPress: () => router.push('/application/tracking'),
+    },
+    {
+      label: 'Pending',
+      value: applications.pending.toString(),
+      icon: Clock,
+      color: Colors.warning,
+      onPress: () => router.push('/application/tracking'),
+    },
   ];
 
   const getCategoryColor = (category: string) => {
@@ -122,7 +139,7 @@ export default function HomeScreen() {
                 style={styles.bellButton}
               >
                 <Bell size={20} color={Colors.white} strokeWidth={2.5} />
-                <View style={styles.notificationBadge} />
+                {unreadCount > 0 && <View style={styles.notificationBadge} />}
               </TouchableOpacity>
             </View>
 
@@ -142,13 +159,18 @@ export default function HomeScreen() {
         {/* Quick Stats Cards */}
         <View style={styles.statsContainer}>
           {quickStats.map((stat, index) => (
-            <View key={index} style={styles.statCard}>
+            <TouchableOpacity
+              key={index}
+              style={styles.statCard}
+              onPress={stat.onPress}
+              activeOpacity={0.75}
+            >
               <View style={[styles.statIconContainer, { backgroundColor: stat.color + '15' }]}>
                 <stat.icon size={20} color={stat.color} strokeWidth={2} />
               </View>
               <Text style={styles.statValue}>{stat.value}</Text>
               <Text style={styles.statLabel}>{stat.label}</Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
 

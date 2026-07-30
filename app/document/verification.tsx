@@ -14,8 +14,8 @@ import { CircleCheck as CheckCircle2, CircleAlert as AlertCircle, Clock, Upload,
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { Header, AppButton } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
+import { getDocuments } from '@/lib/api';
 
 interface DocumentItem {
   id: string;
@@ -38,7 +38,7 @@ const REQUIRED_DOCS: Omit<DocumentItem, 'id' | 'status'>[] = [
 ];
 
 export default function DocumentVerificationScreen() {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const params = useLocalSearchParams<{ application_id?: string }>();
   const [docs, setDocs] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,15 +52,15 @@ export default function DocumentVerificationScreen() {
   const loadDocuments = async () => {
     setLoading(true);
     try {
-      if (user?.id && params.application_id) {
-        const { data } = await supabase
-          .from('application_documents')
-          .select('*')
-          .eq('application_id', params.application_id);
+      if (token && params.application_id) {
+        const data = await getDocuments(token);
+        const documents = (data || []).filter(
+          (doc: any) => doc.application_id === params.application_id
+        );
 
-        if (data && data.length > 0) {
+        if (documents.length > 0) {
           const merged = REQUIRED_DOCS.map((doc, idx) => {
-            const existing = data.find(d => d.name === doc.name);
+            const existing = documents.find((d: any) => d.name === doc.name);
             return {
               id: existing?.id || String(idx + 1),
               name: doc.name,
@@ -74,15 +74,25 @@ export default function DocumentVerificationScreen() {
           return;
         }
       }
-      // Demo data
-      setDocs(REQUIRED_DOCS.map((doc, idx) => ({
-        id: String(idx + 1),
-        name: doc.name,
-        required: doc.required,
-        status: idx === 0 ? 'verified' : idx === 1 ? 'pending' : idx === 2 ? 'rejected' : 'not_uploaded',
-        file_url: idx <= 1 ? `${doc.name.toLowerCase().replace(/ /g, '_')}.pdf` : undefined,
-        rejection_reason: idx === 2 ? 'Document is blurry. Please upload a clear copy.' : undefined,
-      })));
+
+      setDocs(
+        REQUIRED_DOCS.map((doc, idx) => ({
+          id: String(idx + 1),
+          name: doc.name,
+          required: doc.required,
+          status:
+            idx === 0
+              ? 'verified'
+              : idx === 1
+              ? 'pending'
+              : idx === 2
+              ? 'rejected'
+              : 'not_uploaded',
+          file_url: idx <= 1 ? `${doc.name.toLowerCase().replace(/ /g, '_')}.pdf` : undefined,
+          rejection_reason:
+            idx === 2 ? 'Document is blurry. Please upload a clear copy.' : undefined,
+        }))
+      );
     } finally {
       setLoading(false);
     }

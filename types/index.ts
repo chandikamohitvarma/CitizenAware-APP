@@ -46,7 +46,9 @@ export interface Scheme {
   applied: number;
   featured: boolean;
   image?: string;
+  state?: string;
 }
+
 
 export interface Category {
   id: string;

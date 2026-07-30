@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { ChevronLeft, Bell, Menu, MoveVertical as MoreVertical } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 
 interface HeaderProps {
@@ -11,6 +12,7 @@ interface HeaderProps {
   showMenu?: boolean;
   showNotification?: boolean;
   showMore?: boolean;
+  hasUnread?: boolean;
   onBackPress?: () => void;
   onMenuPress?: () => void;
   onNotificationPress?: () => void;
@@ -27,6 +29,7 @@ export function Header({
   showMenu = false,
   showNotification = false,
   showMore = false,
+  hasUnread = false,
   onBackPress,
   onMenuPress,
   onNotificationPress,
@@ -47,7 +50,18 @@ export function Header({
     >
       <View style={styles.leftSection}>
         {showBack && (
-          <TouchableOpacity onPress={onBackPress} style={styles.iconButton}>
+          <TouchableOpacity
+            onPress={() => {
+              if (onBackPress) {
+                onBackPress();
+              } else if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.push('/(tabs)');
+              }
+            }}
+            style={styles.iconButton}
+          >
             <ChevronLeft size={24} color={transparent ? Colors.white : Colors.dark} />
           </TouchableOpacity>
         )}
@@ -79,7 +93,7 @@ export function Header({
         {showNotification && (
           <TouchableOpacity onPress={onNotificationPress} style={styles.iconButton}>
             <Bell size={24} color={transparent ? Colors.white : Colors.dark} />
-            <View style={styles.notificationDot} />
+            {hasUnread && <View style={styles.notificationDot} />}
           </TouchableOpacity>
         )}
         {showMore && (

@@ -7,7 +7,7 @@ import { Bookmark, Share2, Users, Calendar, Building, ChevronRight, CircleCheck,
 import { Colors } from '@/constants/colors';
 import { AppButton, Header } from '@/components/ui';
 import { useSchemeStore } from '@/store/schemeStore';
-import { supabase } from '@/lib/supabase';
+import { getScheme } from '@/lib/api';
 
 interface Scheme {
   id: string;
@@ -33,11 +33,7 @@ export default function SchemeDetailsScreen() {
   const loadScheme = async () => {
     try {
       setLoading(true);
-      const { data } = await supabase
-        .from('schemes')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+      const data = await getScheme(id as string);
 
       if (data) {
         setScheme(data);

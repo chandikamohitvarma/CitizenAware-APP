@@ -16,7 +16,6 @@ import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
 import { AppInput } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
-import { supabase } from '@/lib/supabase';
 
 function ParliamentBuilding() {
   return (
@@ -67,7 +66,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { setUser } = useAuthStore();
+  const { login, error: authError } = useAuthStore();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -77,21 +76,17 @@ export default function LoginScreen() {
     setIsLoading(true);
     setError('');
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-      if (authError) { setError(authError.message || 'Login failed'); return; }
-      if (data.user) {
-        setUser({
-          id: data.user.id,
-          name: data.user.user_metadata?.name || 'User',
-          email: data.user.email || '',
-          phone: data.user.user_metadata?.phone || '',
-          address: { street: '', city: '', state: '', pincode: '' },
-          createdAt: data.user.created_at || '',
-        });
-        router.replace('/(tabs)');
+      const success = await login(email, password);
+      if (!success) {
+        setError(authError || 'Incorrect email or password');
+        return;
       }
-    } catch { setError('An error occurred. Please try again.'); }
-    finally { setIsLoading(false); }
+      router.replace('/(tabs)');
+    } catch {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -12,9 +12,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, ArrowLeft, Send, CircleCheck as CheckCircle } from 'lucide-react-native';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/colors';
 import { AppButton, AppInput } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { requestPasswordReset } from '@/lib/api';
+
+const RESET_EMAIL_KEY = 'citizenaware_password_reset_email';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -37,24 +40,11 @@ export default function ForgotPasswordScreen() {
     setError('');
 
     try {
-      const redirectTo =
-        typeof window !== 'undefined' && window.location && window.location.origin
-          ? `${window.location.origin}/auth/set-password`
-          : 'citizenaware://reset-password';
-
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo,
-      });
-
-      if (resetError) {
-        setError(resetError.message || 'Failed to send reset email');
-        setIsLoading(false);
-        return;
-      }
-
+      await requestPasswordReset(email);
+      await AsyncStorage.setItem(RESET_EMAIL_KEY, email);
       setEmailSent(true);
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (resetError: any) {
+      setError(resetError?.message || 'Failed to send reset email');
     } finally {
       setIsLoading(false);
     }

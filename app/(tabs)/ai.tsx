@@ -1,12 +1,167 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Send, Mic, Sparkles } from 'lucide-react-native';
+import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { ChatBubble } from '@/components/ui';
 import { useNotificationStore } from '@/store/notificationStore';
-import { chatMessages } from '@/constants/data';
+
+interface AIResult {
+  text: string;
+  suggestions: string[];
+}
+
+function generateSmartAIResponse(userQuery: string): AIResult {
+  const q = userQuery.toLowerCase().trim();
+
+  // 1. Education / Scholarships / Students
+  if (
+    q.includes('education') ||
+    q.includes('student') ||
+    q.includes('scholarship') ||
+    q.includes('nsp') ||
+    q.includes('school') ||
+    q.includes('college') ||
+    q.includes('fee')
+  ) {
+    return {
+      text: 'Here are the top Indian Education & Scholarship Schemes for 2026:\n\n1. **National Scholarship Portal (NSP 2026-27)**: Direct financial grants up to ₹50,000/yr for pre-matric, post-matric & higher studies.\n2. **PM Vidyalaxmi Loan Scheme**: Collateral-free higher education loans up to ₹10 Lakhs with interest subsidies.\n3. **Post-Matric Disability Scholarship**: Special tuition & maintenance allowances.\n\nAll benefits are transferred directly to the student\'s Aadhaar-linked bank account.',
+      suggestions: ['Check NSP Eligibility', 'View Education Schemes', 'Apply for NSP'],
+    };
+  }
+
+  // 2. Health / Ayushman / Hospital / Medical
+  if (
+    q.includes('health') ||
+    q.includes('ayushman') ||
+    q.includes('medical') ||
+    q.includes('hospital') ||
+    q.includes('card')
+  ) {
+    return {
+      text: 'Under **Ayushman Bharat PMJAY 2026 Expansion**:\n\n• Free cashless hospital treatment up to ₹5 Lakh per family per year.\n• Empanelled across 29,000+ top government and private hospitals across India.\n• **2026 Update**: Now covers all senior citizens aged 70+ regardless of family income level!\n\nRequired Documents: Aadhaar Card, Ration Card / Domicile Proof.',
+      suggestions: ['Check Ayushman Eligibility', 'Apply for Ayushman Card', 'Empanelled Hospitals'],
+    };
+  }
+
+  // 3. Farmers / Agriculture / PM-Kisan
+  if (
+    q.includes('kisan') ||
+    q.includes('farmer') ||
+    q.includes('agriculture') ||
+    q.includes('crop') ||
+    q.includes('land') ||
+    q.includes('rythu')
+  ) {
+    return {
+      text: 'Under **PM-Kisan 23rd Installment (2026)**:\n\n• Eligible landholding farmers receive ₹6,000 per year directly in 3 installments of ₹2,000.\n• Payments are credited directly via e-KYC Aadhaar Direct Benefit Transfer (DBT).\n\nState schemes like **Rythu Bandhu (Telangana)** provide additional ₹10,000/acre per year for agricultural inputs.',
+      suggestions: ['Check PM-Kisan Status', 'Apply for PM-Kisan', 'State Farmer Schemes'],
+    };
+  }
+
+  // 4. Housing / PM Awas
+  if (
+    q.includes('housing') ||
+    q.includes('awas') ||
+    q.includes('home') ||
+    q.includes('house')
+  ) {
+    return {
+      text: 'Under **PM Awas Yojana-Urban 2.0 (2026)**:\n\n• Interest subsidies & financial grants up to ₹2.5 Lakh for EWS/LIG families buying or constructing their first pucca house.\n• Direct credit to bank account linked via Aadhaar e-KYC.\n\nRequired Documents: Aadhaar Card, Income Certificate, Domicile Proof, Bank Passbook.',
+      suggestions: ['Check PM Awas Eligibility', 'Apply for PM Awas', 'Required Documents'],
+    };
+  }
+
+  // 5. Loans / Business / MUDRA / Vishwakarma
+  if (
+    q.includes('business') ||
+    q.includes('loan') ||
+    q.includes('mudra') ||
+    q.includes('vishwakarma') ||
+    q.includes('artisan') ||
+    q.includes('startup')
+  ) {
+    return {
+      text: 'Top Self-Employment & Business Credit Schemes for 2026:\n\n1. **PM Vishwakarma Yojana 2026**: ₹3 Lakh collateral-free loan @ 5% interest + ₹15,000 toolkit incentive for traditional artisans.\n2. **MUDRA Loan 2026**: Collateral-free loans (Shishu up to ₹50k, Kishore up to ₹5L, Tarun up to ₹10L).\n3. **Stand-Up India**: ₹10 Lakh to ₹1 Crore loans for SC/ST & Women entrepreneurs.',
+      suggestions: ['Apply PM Vishwakarma', 'Apply MUDRA Loan', 'Check Loan Eligibility'],
+    };
+  }
+
+  // 6. Women & Girl Child
+  if (
+    q.includes('women') ||
+    q.includes('girl') ||
+    q.includes('sukanya') ||
+    q.includes('ladki') ||
+    q.includes('bahin') ||
+    q.includes('amma') ||
+    q.includes('lakshmi')
+  ) {
+    return {
+      text: 'Top 2026 Schemes for Women & Girl Child:\n\n1. **Sukanya Samriddhi Yojana**: High 8.2% tax-free interest rate for savings in the name of a girl child under 10 yrs.\n2. **Majhi Ladki Bahin / Gruha Lakshmi**: ₹1,500 - ₹2,000 monthly direct financial support for women heads of family.\n3. **Kanya Sumangala Yojana (UP)**: Up to ₹25,000 financial support for girl education.',
+      suggestions: ['Sukanya Samriddhi', 'Majhi Ladki Bahin', 'Apply Women Schemes'],
+    };
+  }
+
+  // 7. Track Application / Status
+  if (
+    q.includes('track') ||
+    q.includes('status') ||
+    q.includes('application') ||
+    q.includes('my app')
+  ) {
+    return {
+      text: 'You can track real-time processing status for all your submitted government scheme applications directly from your profile.\n\nAverage processing timelines:\n• Document Verification: 24 - 48 Hours\n• Ministry Approval: 3 - 5 Working Days\n• Direct Benefit Transfer (DBT): Within 7 Days of Approval.',
+      suggestions: ['View Applications', 'Check DBT Status', 'Help & Support'],
+    };
+  }
+
+  // 8. Eligibility Check / Criteria
+  if (
+    q.includes('eligible') ||
+    q.includes('eligibility') ||
+    q.includes('criteria') ||
+    q.includes('am i') ||
+    q.includes('can i')
+  ) {
+    return {
+      text: 'Eligibility for government schemes is evaluated based on 4 key factors:\n\n1. **Age**: 18-60 years (or specific ranges for child/senior schemes).\n2. **Annual Family Income**: Under ₹2.5 Lakh (BPL/EWS) or up to ₹8 Lakh (LIG/MIG).\n3. **Category / Social Status**: SC, ST, OBC, EWS, Women, Disabled, Artisans, Farmers.\n4. **State / Domicile**: Specific state residence requirement for regional schemes.\n\nUse our built-in Eligibility Checker to test your profile against 15+ schemes!',
+      suggestions: ['Run Eligibility Evaluator', 'Filter Schemes by State', 'Explore All Schemes'],
+    };
+  }
+
+  // 9. Follow up / Tell me more / Apply now
+  if (q.includes('tell me more') || q.includes('more') || q.includes('detail') || q.includes('explain')) {
+    return {
+      text: 'Indian Government Schemes in 2026 provide Direct Benefit Transfers (DBT) directly into your Aadhaar-linked bank account.\n\nKey highlights:\n• 100% Digital process with minimal documentation\n• Direct bank credit without middlemen\n• Real-time status notifications & SMS updates\n\nSelect a scheme below or click "Apply Now" to start your 6-step online application!',
+      suggestions: ['Check My Eligibility', 'Explore All Schemes', 'View Required Documents'],
+    };
+  }
+
+  if (q.includes('apply now') || q.includes('apply') || q.includes('how to apply')) {
+    return {
+      text: 'Applying is simple and takes under 3 minutes!\n\n**6-Step Application Process**:\n1. Personal Information (Name, DOB, Gender, Mobile)\n2. Residential Address & State/District Selection\n3. Annual Income & Category Details\n4. Dynamic Scheme Document Upload\n5. DBT Bank Account & IFSC Code\n6. Review & One-Click Submission',
+      suggestions: ['Explore All Schemes', 'Check Eligibility First', 'View My Profile'],
+    };
+  }
+
+  // 10. Generic fallback response
+  return {
+    text: `Here is the relevant information for "${userQuery}":\n\nCitizenAware connects Indian citizens with 2026 Central & State Government Welfare Schemes. Benefits range from direct financial assistance, subsidized loans, free healthcare, housing grants, to educational scholarships.\n\nWould you like to check your eligibility or explore schemes for your state?`,
+    suggestions: ['Check Scheme Eligibility', 'Find Education Schemes', 'Business Loan Schemes'],
+  };
+}
 
 export default function AIScreen() {
   const [input, setInput] = useState('');
@@ -19,30 +174,22 @@ export default function AIScreen() {
 
   const handleSend = () => {
     if (!input.trim()) return;
-    sendMessage(input.trim());
+    const query = input.trim();
+    sendMessage(query);
     setInput('');
+
     setTimeout(() => {
-      const responses = [
-        'I found 3 schemes matching your criteria. Would you like me to show them?',
-        'Based on your profile, you are eligible for PM Scholarship Scheme and Ayushman Bharat.',
-        'Let me check that for you. This scheme provides benefits up to INR 50,000 per year.',
-      ];
-      addAIResponse(responses[Math.floor(Math.random() * responses.length)], [
-        'View details',
-        'Check eligibility',
-        'Compare schemes',
-      ]);
-    }, 1500);
+      const result = generateSmartAIResponse(query);
+      addAIResponse(result.text, result.suggestions);
+    }, 600);
   };
 
   const handleSuggestionPress = (suggestion: string) => {
     sendMessage(suggestion);
     setTimeout(() => {
-      addAIResponse('Great choice! Let me find the information you need.', [
-        'Tell me more',
-        'Apply now',
-      ]);
-    }, 1000);
+      const result = generateSmartAIResponse(suggestion);
+      addAIResponse(result.text, result.suggestions);
+    }, 600);
   };
 
   const handleVoice = () => {
@@ -51,8 +198,10 @@ export default function AIScreen() {
 
   const quickActions = [
     { label: 'Find Education Schemes', query: 'Show education schemes for students' },
-    { label: 'Check Eligibility', query: 'Am I eligible for PM Scholarship?' },
-    { label: 'Track Applications', query: 'What is the status of my applications?' },
+    { label: 'Check Eligibility', query: 'Am I eligible for government schemes?' },
+    { label: 'Track Applications', query: 'How do I track my applications status?' },
+    { label: 'Women & Girl Schemes', query: 'Show schemes for women and girl child' },
+    { label: 'Business & Loans', query: 'Show business loan and MUDRA schemes' },
   ];
 
   return (
@@ -67,8 +216,8 @@ export default function AIScreen() {
           <View style={styles.headerContent}>
             <Sparkles size={24} color={Colors.white} />
             <View style={styles.headerText}>
-              <Text style={styles.title}>AI Assistant</Text>
-              <Text style={styles.subtitle}>Ask me anything about schemes</Text>
+              <Text style={styles.title}>AI Scheme Assistant</Text>
+              <Text style={styles.subtitle}>Ask me anything about 2026 government schemes</Text>
             </View>
           </View>
         </LinearGradient>
@@ -117,7 +266,7 @@ export default function AIScreen() {
             <TextInput
               value={input}
               onChangeText={setInput}
-              placeholder="Ask about schemes..."
+              placeholder="Ask about schemes, eligibility, loans..."
               placeholderTextColor={Colors.gray.icon}
               style={styles.input}
               multiline
@@ -139,8 +288,6 @@ export default function AIScreen() {
     </SafeAreaView>
   );
 }
-
-import { router } from 'expo-router';
 
 const styles = StyleSheet.create({
   container: {

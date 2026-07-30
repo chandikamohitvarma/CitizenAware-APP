@@ -13,7 +13,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { CircleCheck as CheckCircle2, TriangleAlert as AlertTriangle, CircleAlert as AlertCircle, Info, ChevronRight, Trash2 } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { Header } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { getNotification, markNotificationRead, getScheme } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 
 interface Notification {
@@ -28,7 +28,7 @@ interface Notification {
 
 export default function NotificationDetailScreen() {
   const { id } = useLocalSearchParams();
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const [notification, setNotification] = useState<Notification | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -36,39 +36,24 @@ export default function NotificationDetailScreen() {
 
   useEffect(() => {
     loadNotification();
-  }, [id, user?.id]);
+  }, [id, token]);
 
   const loadNotification = async () => {
-    if (!id || !user?.id) return;
+    if (!id || !token) return;
 
     try {
       setLoading(true);
-      const { data } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
+      if (!token) return;
+      const data = await getNotification(token, id as string);
       if (data) {
         setNotification(data);
 
-        // Mark as read
         if (!data.read) {
-          await supabase
-            .from('notifications')
-            .update({ read: true })
-            .eq('id', id);
+          await markNotificationRead(token, id as string);
         }
 
-        // Load related scheme if exists
         if (data.scheme_id) {
-          const { data: schemeData } = await supabase
-            .from('schemes')
-            .select('name')
-            .eq('id', data.scheme_id)
-            .maybeSingle();
-
+          const schemeData = await getScheme(data.scheme_id);
           if (schemeData) {
             setSchemeName(schemeData.name);
           }
@@ -97,23 +82,7 @@ export default function NotificationDetailScreen() {
   };
 
   const deleteNotification = async () => {
-    if (!notification?.id || !user?.id) return;
-
-    try {
-      setDeleting(true);
-      await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notification.id)
-        .eq('user_id', user.id);
-
-      router.back();
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-      Alert.alert('Error', 'Failed to delete notification');
-    } finally {
-      setDeleting(false);
-    }
+    Alert.alert('Unsupported', 'Deleting notifications is not supported yet.');
   };
 
   const getIcon = () => {

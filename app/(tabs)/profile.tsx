@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/store/authStore';
 import { useSchemeStore } from '@/store/schemeStore';
-import { supabase } from '@/lib/supabase';
+import { getApplications } from '@/lib/api';
 
 interface UserStats {
   savedCount: number;
@@ -16,7 +16,7 @@ interface UserStats {
 }
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, token } = useAuthStore();
   const { savedSchemes } = useSchemeStore();
   const [stats, setStats] = useState<UserStats>({
     savedCount: 0,
@@ -35,17 +35,15 @@ export default function ProfileScreen() {
     try {
       setLoading(true);
 
-      // Get saved schemes count
       const savedCount = savedSchemes.length;
 
-      // Get applications count
-      const { data: applications } = await supabase
-        .from('applications')
-        .select('status')
-        .eq('user_id', user.id);
-
-      const appliedCount = applications?.length || 0;
-      const approvedCount = applications?.filter((a: any) => a.status === 'approved').length || 0;
+      let appliedCount = 0;
+      let approvedCount = 0;
+      if (token) {
+        const applications = await getApplications(token);
+        appliedCount = applications.length;
+        approvedCount = applications.filter((a: any) => a.status === 'approved').length;
+      }
 
       setStats({
         savedCount,
@@ -109,8 +107,7 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
-      logout();
+      await logout();
       router.replace('/auth/login');
     } catch (error) {
       console.error('Error logging out:', error);

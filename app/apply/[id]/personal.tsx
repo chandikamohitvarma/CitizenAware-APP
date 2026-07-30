@@ -23,7 +23,7 @@ export default function PersonalDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Personal Details" showBack onBackPress={() => router.back()} />
+      <Header title="Personal Details" showBack onBackPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)')} />
       <ProgressStepper currentStep={1} />
 
       <ScrollView style={styles.content}>

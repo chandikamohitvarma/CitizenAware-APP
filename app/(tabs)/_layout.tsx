@@ -4,36 +4,33 @@ import { Hop as Home, FileText, MessageCircle, Bell, User } from 'lucide-react-n
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/store/authStore';
-import { supabase } from '@/lib/supabase';
+import { getNotifications } from '@/lib/api';
 import { useEffect, useState } from 'react';
 
+import { useNotificationStore } from '@/store/notificationStore';
+
 export default function TabLayout() {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
+  const storeNotifs = useNotificationStore(state => state.notifications);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    if (!user?.id) { setUnreadCount(0); return; }
-
     const fetchUnread = async () => {
-      const { count } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('read', false);
-      setUnreadCount(count || 0);
+      if (token) {
+        try {
+          const notifications = await getNotifications(token);
+          const count = notifications.filter((n: any) => !n.read).length;
+          setUnreadCount(count);
+          return;
+        } catch (error) {
+          console.error('Failed to load unread notifications from API', error);
+        }
+      }
+      setUnreadCount(storeNotifs.filter((n: any) => !n.read).length);
     };
 
     fetchUnread();
-    const channel = supabase
-      .channel('notifications-tab')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-        fetchUnread
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user?.id]);
+  }, [token, storeNotifs]);
 
   return (
     <Tabs

@@ -13,8 +13,9 @@ import { Bell, BellOff, Check, CircleAlert as AlertCircle, CircleCheck as CheckC
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { Header } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { getNotifications, markNotificationRead, markAllNotificationsRead } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 
 interface Notification {
   id: string;
@@ -27,7 +28,7 @@ interface Notification {
 }
 
 export default function NotificationsScreen() {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [loading, setLoading] = useState(true);
@@ -38,16 +39,11 @@ export default function NotificationsScreen() {
   }, [user?.id]);
 
   const loadNotifications = async () => {
-    if (!user?.id) return;
+    if (!token) return;
 
     try {
       setLoading(true);
-      const { data } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
+      const data = await getNotifications(token);
       setNotifications(data || []);
     } catch (error) {
       console.error('Error loading notifications:', error);
@@ -59,42 +55,29 @@ export default function NotificationsScreen() {
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
     loadNotifications().finally(() => setRefreshing(false));
-  }, [user?.id]);
+  }, [token]);
 
   const markAllAsRead = async () => {
-    if (!user?.id) return;
-
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     try {
-      const unreadIds = notifications
-        .filter((n) => !n.read)
-        .map((n) => n.id);
-
-      if (unreadIds.length === 0) return;
-
-      await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', user.id)
-        .in('id', unreadIds);
-
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, read: true }))
-      );
+      useNotificationStore.getState().markAllAsRead();
+      if (token) {
+        await markAllNotificationsRead(token);
+      }
     } catch (error) {
       console.error('Error marking notifications as read:', error);
     }
   };
 
   const markAsRead = async (notificationId: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+    );
     try {
-      await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
-
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
-      );
+      useNotificationStore.getState().markAsRead(notificationId);
+      if (token) {
+        await markNotificationRead(token, notificationId);
+      }
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -140,7 +123,11 @@ export default function NotificationsScreen() {
     <TouchableOpacity
       onPress={() => {
         markAsRead(item.id);
-        router.push(`/notification/${item.id}`);
+        if (item.scheme_id) {
+          router.push(`/scheme/${item.scheme_id}`);
+        } else {
+          router.push(`/notification/${item.id}`);
+        }
       }}
       style={[
         styles.notificationCard,

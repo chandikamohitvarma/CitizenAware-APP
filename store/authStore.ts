@@ -1,10 +1,12 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { User } from '@/types';
-import { currentUser } from '@/constants/data';
+import { getCurrentUser, login as apiLogin, register as apiRegister } from '@/lib/api';
 
 interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
+  token: string | null;
   isLoading: boolean;
   error: string | null;
   onboardingCompleted: boolean;
@@ -14,19 +16,22 @@ interface AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   loginWithGoogle: () => Promise<boolean>;
   register: (name: string, email: string, phone: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   verifyOTP: (otp: string) => Promise<boolean>;
-  setUser: (user: User) => void;
+  setUser: (user: User, token?: string | null) => void;
   setOnboardingCompleted: (completed: boolean) => void;
   setLanguage: (lang: string) => void;
   updateProfile: (updates: Partial<User>) => void;
   clearError: () => void;
 }
 
+const AUTH_TOKEN_KEY = 'citizenaware_auth_token';
+
 export const useAuthStore = create<AuthState>()(
   (set, get) => ({
       isAuthenticated: false,
       user: null,
+      token: null,
       isLoading: false,
       error: null,
       onboardingCompleted: false,
@@ -35,19 +40,20 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          if (email && password.length >= 6) {
-            set({
-              isAuthenticated: true,
-              user: currentUser,
-              isLoading: false,
-            });
-            return true;
-          }
-          set({ error: 'Invalid credentials', isLoading: false });
-          return false;
-        } catch (error) {
-          set({ error: 'Login failed', isLoading: false });
+          const tokenResponse = await apiLogin(email, password);
+          const token = tokenResponse.access_token;
+          const user = await getCurrentUser(token);
+          await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+          set({
+            isAuthenticated: true,
+            user,
+            token,
+            isLoading: false,
+          });
+          return true;
+        } catch (error: any) {
+          const message = error?.message || 'Login failed';
+          set({ error: message, isLoading: false });
           return false;
         }
       },
@@ -58,7 +64,7 @@ export const useAuthStore = create<AuthState>()(
           await new Promise(resolve => setTimeout(resolve, 1500));
           set({
             isAuthenticated: true,
-            user: currentUser,
+            user: null,
             isLoading: false,
           });
           return true;
@@ -71,30 +77,22 @@ export const useAuthStore = create<AuthState>()(
       register: async (name: string, email: string, phone: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          const newUser: User = {
-            ...currentUser,
-            id: Date.now().toString(),
-            name,
-            email,
-            phone,
-            createdAt: new Date().toISOString(),
-          };
-          set({
-            user: newUser,
-            isLoading: false,
-          });
+          await apiRegister(name, email, password, phone);
+          set({ isLoading: false });
           return true;
-        } catch (error) {
-          set({ error: 'Registration failed', isLoading: false });
+        } catch (error: any) {
+          const message = error?.message || 'Registration failed';
+          set({ error: message, isLoading: false });
           return false;
         }
       },
 
-      logout: () => {
+      logout: async () => {
+        await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
         set({
           isAuthenticated: false,
           user: null,
+          token: null,
         });
       },
 
@@ -117,7 +115,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      setUser: (user: User) => set({ user, isAuthenticated: true }),
+      setUser: (user: User, token: string | null = null) => set({ user, token, isAuthenticated: true }),
 
       setOnboardingCompleted: (completed: boolean) => set({ onboardingCompleted: completed }),
 

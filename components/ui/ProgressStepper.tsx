@@ -1,28 +1,51 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Check } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
+import { useLocalSearchParams, router } from 'expo-router';
 
 interface Step {
   id: number;
   label: string;
+  route?: string;
 }
 
 interface ProgressStepperProps {
   steps?: Step[];
   currentStep: number;
+  onStepPress?: (stepId: number) => void;
+  schemeId?: string;
 }
 
 const defaultSteps: Step[] = [
-  { id: 1, label: 'Personal' },
-  { id: 2, label: 'Address' },
-  { id: 3, label: 'Income' },
-  { id: 4, label: 'Documents' },
-  { id: 5, label: 'Bank' },
-  { id: 6, label: 'Review' },
+  { id: 1, label: 'Personal', route: 'personal' },
+  { id: 2, label: 'Address', route: 'address' },
+  { id: 3, label: 'Income', route: 'income' },
+  { id: 4, label: 'Documents', route: 'documents' },
+  { id: 5, label: 'Bank', route: 'bank' },
+  { id: 6, label: 'Review', route: 'review' },
 ];
 
-export function ProgressStepper({ steps = defaultSteps, currentStep }: ProgressStepperProps) {
+export function ProgressStepper({
+  steps = defaultSteps,
+  currentStep,
+  onStepPress,
+  schemeId: customSchemeId,
+}: ProgressStepperProps) {
+  const params = useLocalSearchParams();
+  const schemeId = customSchemeId || (params.id as string);
+
+  const handlePress = (step: Step) => {
+    if (onStepPress) {
+      onStepPress(step.id);
+      return;
+    }
+
+    if (schemeId && step.route) {
+      router.push(`/apply/${schemeId}/${step.route}` as any);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.stepperContainer}>
@@ -32,7 +55,13 @@ export function ProgressStepper({ steps = defaultSteps, currentStep }: ProgressS
 
           return (
             <View key={step.id} style={styles.stepWrapper}>
-              <View style={styles.stepContent}>
+              <TouchableOpacity
+                style={styles.stepContent}
+                onPress={() => handlePress(step)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Step ${step.id}: ${step.label}`}
+              >
                 <View
                   style={[
                     styles.circle,
@@ -62,7 +91,8 @@ export function ProgressStepper({ steps = defaultSteps, currentStep }: ProgressS
                 >
                   {step.label}
                 </Text>
-              </View>
+              </TouchableOpacity>
+
               {index < steps.length - 1 && (
                 <View
                   style={[
@@ -84,6 +114,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 8,
     backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray.border + '60',
   },
   stepperContainer: {
     flexDirection: 'row',
@@ -97,7 +129,8 @@ const styles = StyleSheet.create({
   },
   stepContent: {
     alignItems: 'center',
-    width: 50,
+    width: 52,
+    cursor: 'pointer',
   },
   circle: {
     width: 28,
@@ -119,7 +152,7 @@ const styles = StyleSheet.create({
   },
   stepNumber: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.gray.text,
   },
   stepNumberCurrent: {
@@ -130,17 +163,18 @@ const styles = StyleSheet.create({
     color: Colors.gray.text,
     marginTop: 4,
     textAlign: 'center',
+    fontWeight: '500',
   },
   stepLabelActive: {
     color: Colors.dark,
-    fontWeight: '500',
+    fontWeight: '700',
   },
   connector: {
     flex: 1,
     height: 2,
     backgroundColor: Colors.gray.border,
-    marginHorizontal: -8,
-    marginBottom: 20,
+    marginHorizontal: -6,
+    marginBottom: 18,
     zIndex: -1,
   },
   connectorCompleted: {

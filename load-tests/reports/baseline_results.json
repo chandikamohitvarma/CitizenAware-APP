@@ -1,0 +1,54 @@
+{
+  "virtual_users": 100,
+  "duration_seconds": 60.89,
+  "total_requests": 14864,
+  "requests_per_second_rps": 244.13,
+  "response_time_ms": {
+    "min": 35.0,
+    "avg": 204.47,
+    "max": 1416.17,
+    "p90": 243.38,
+    "p95": 264.63,
+    "p99": 1159.52
+  },
+  "status_codes": {
+    "200": 14836,
+    "500": 14
+  },
+  "error_count": 14,
+  "error_rate_pct": 0.09,
+  "endpoint_breakdown": {
+    "Get Schemes Feed": {
+      "count": 3712,
+      "rps": 60.97,
+      "min_ms": 60.68,
+      "avg_ms": 174.51,
+      "max_ms": 306.19,
+      "errors": 2
+    },
+    "Get Notifications": {
+      "count": 3712,
+      "rps": 60.97,
+      "min_ms": 43.84,
+      "avg_ms": 175.01,
+      "max_ms": 304.44,
+      "errors": 1
+    },
+    "Post Auth Login": {
+      "count": 3712,
+      "rps": 60.97,
+      "min_ms": 40.56,
+      "avg_ms": 175.07,
+      "max_ms": 309.24,
+      "errors": 4
+    },
+    "Get Current Profile": {
+      "count": 3712,
+      "rps": 60.97,
+      "min_ms": 42.68,
+      "avg_ms": 174.72,
+      "max_ms": 335.43,
+      "errors": 1
+    }
+  }
+}

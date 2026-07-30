@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { Header } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { getSchemes } from '@/lib/api';
 
 interface Category {
   name: string;
@@ -35,7 +35,7 @@ export default function CategoriesScreen() {
   const loadCategories = async () => {
     try {
       setLoading(true);
-      const { data } = await supabase.from('schemes').select('category');
+      const data = await getSchemes();
 
       if (data) {
         const categoryMap = new Map<string, number>();

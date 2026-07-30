@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import { Search } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { Header } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { getSchemes } from '@/lib/api';
 
 interface Scheme {
   id: string;
@@ -51,7 +51,7 @@ export default function AllSchemesScreen() {
   const loadSchemes = async () => {
     try {
       setLoading(true);
-      const { data } = await supabase.from('schemes').select('*');
+      const data = await getSchemes();
       setSchemes(data || []);
     } catch (error) {
       console.error('Error loading schemes:', error);
