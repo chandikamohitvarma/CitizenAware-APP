@@ -175,7 +175,14 @@ export default function SchemesScreen() {
             onPress={() => router.push(`/scheme/eligibility/${item.id}`)}
           >
             <CheckCircle size={12} color={Colors.primary.green} />
-            <Text style={styles.checkEligText}>Check Eligibility</Text>
+            <Text style={styles.checkEligText}>Eligibility</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.applyNowCardBtn}
+            onPress={() => router.push(`/apply/${item.id}`)}
+          >
+            <Text style={styles.applyNowCardText}>Apply Now</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -457,7 +464,8 @@ const styles = StyleSheet.create({
   },
   cardActionRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: Colors.gray.border + '60',
     paddingTop: 8,
@@ -473,8 +481,19 @@ const styles = StyleSheet.create({
   },
   checkEligText: {
     fontSize: 12,
-    color: Colors.primary.green,
     fontWeight: '600',
+    color: Colors.primary.green,
+  },
+  applyNowCardBtn: {
+    backgroundColor: Colors.primary.blue,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  applyNowCardText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   loadingContainer: {
     flex: 1,

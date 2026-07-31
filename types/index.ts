@@ -2,15 +2,17 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   avatar?: string;
   aadhaar?: string;
   dateOfBirth?: string;
   gender?: string;
-  address: Address;
+  address?: Address;
   bankDetails?: BankDetails;
   income?: Income;
-  createdAt: string;
+  role?: string;
+  createdAt?: string;
+  created_at?: string;
 }
 
 export interface Address {

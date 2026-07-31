@@ -6,6 +6,8 @@ import { Check, Edit3, ShieldCheck } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { AppButton, Header, ProgressStepper } from '@/components/ui';
 import { schemes } from '@/constants/data';
+import { useAuthStore } from '@/store/authStore';
+import { useSchemeStore } from '@/store/schemeStore';
 
 export default function ReviewScreen() {
   const { id } = useLocalSearchParams();
@@ -70,6 +72,8 @@ export default function ReviewScreen() {
       Alert.alert('Declaration Required', 'Please check the declaration box to submit your application.');
       return;
     }
+    const currentUser = useAuthStore.getState().user;
+    useSchemeStore.getState().createApplication(String(id), currentUser?.id);
     router.push(`/apply/${id}/success`);
   };
 

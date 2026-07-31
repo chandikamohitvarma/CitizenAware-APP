@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { View, Platform } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function RootLayout() {
   useFrameworkReady();
   const { isAuthenticated, onboardingCompleted } = useAuthStore();
+  const isDarkMode = useSettingsStore(state => state.isDarkMode);
 
   return (
     <>
@@ -82,7 +85,7 @@ export default function RootLayout() {
 
         <Stack.Screen name="+not-found" />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
     </>
   );
 }

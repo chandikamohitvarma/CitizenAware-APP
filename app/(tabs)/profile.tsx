@@ -7,6 +7,8 @@ import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/store/authStore';
 import { useSchemeStore } from '@/store/schemeStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { getThemeColors } from '@/constants/colors';
 import { getApplications } from '@/lib/api';
 
 interface UserStats {
@@ -17,7 +19,10 @@ interface UserStats {
 
 export default function ProfileScreen() {
   const { user, logout, token } = useAuthStore();
-  const { savedSchemes } = useSchemeStore();
+  const { savedSchemes, applications: storeApps } = useSchemeStore();
+  const { isDarkMode } = useSettingsStore();
+  const themeColors = getThemeColors(isDarkMode);
+
   const [stats, setStats] = useState<UserStats>({
     savedCount: 0,
     appliedCount: 0,
@@ -25,25 +30,37 @@ export default function ProfileScreen() {
   });
   const [loading, setLoading] = useState(true);
 
+  const filterUserApps = (list: any[]) => {
+    if (!user || user.id === '1' || (user.email && user.email.toLowerCase().includes('mohit'))) {
+      return list.filter(a => !a.userId || a.userId === '1' || (user?.id && a.userId === user.id));
+    }
+    return list.filter(a => a.userId === user.id);
+  };
+
   useEffect(() => {
     loadUserStats();
-  }, [user?.id, savedSchemes.length]);
+  }, [user?.id, token, savedSchemes.length, storeApps]);
 
   const loadUserStats = async () => {
-    if (!user?.id) return;
-
     try {
       setLoading(true);
-
       const savedCount = savedSchemes.length;
 
-      let appliedCount = 0;
-      let approvedCount = 0;
+      let rawApps: any[] = storeApps;
       if (token) {
-        const applications = await getApplications(token);
-        appliedCount = applications.length;
-        approvedCount = applications.filter((a: any) => a.status === 'approved').length;
+        try {
+          const applications = await getApplications(token);
+          if (applications && Array.isArray(applications) && applications.length > 0) {
+            rawApps = applications;
+          }
+        } catch {
+          // Fall back to local store
+        }
       }
+
+      const userApps = filterUserApps(rawApps);
+      const appliedCount = userApps.length;
+      const approvedCount = userApps.filter((a: any) => (a.status || '').toLowerCase() === 'approved').length;
 
       setStats({
         savedCount,
@@ -52,6 +69,12 @@ export default function ProfileScreen() {
       });
     } catch (error) {
       console.error('Error loading user stats:', error);
+      const userApps = filterUserApps(storeApps);
+      setStats({
+        savedCount: savedSchemes.length,
+        appliedCount: userApps.length,
+        approvedCount: userApps.filter((a: any) => (a.status || '').toLowerCase() === 'approved').length,
+      });
     } finally {
       setLoading(false);
     }

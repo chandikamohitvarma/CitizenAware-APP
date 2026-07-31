@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { ChevronLeft, Bell, Menu, MoveVertical as MoreVertical } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Colors } from '@/constants/colors';
+import { Colors, getThemeColors } from '@/constants/colors';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface HeaderProps {
   title?: string;
@@ -39,12 +40,16 @@ export function Header({
   center = true,
 }: HeaderProps) {
   const insets = useSafeAreaInsets();
+  const isDarkMode = useSettingsStore(state => state.isDarkMode);
+  const themeColors = getThemeColors(isDarkMode);
+
+  const iconColor = transparent ? Colors.white : themeColors.text;
 
   return (
     <View
       style={[
         styles.container,
-        { paddingTop: insets.top + 12 },
+        { paddingTop: insets.top + 12, backgroundColor: transparent ? 'transparent' : themeColors.headerBackground },
         transparent && styles.transparent,
       ]}
     >
@@ -57,17 +62,17 @@ export function Header({
               } else if (router.canGoBack()) {
                 router.back();
               } else {
-                router.push('/(tabs)');
+                router.replace('/(tabs)');
               }
             }}
             style={styles.iconButton}
           >
-            <ChevronLeft size={24} color={transparent ? Colors.white : Colors.dark} />
+            <ChevronLeft size={24} color={iconColor} />
           </TouchableOpacity>
         )}
         {showMenu && (
           <TouchableOpacity onPress={onMenuPress} style={styles.iconButton}>
-            <Menu size={24} color={transparent ? Colors.white : Colors.dark} />
+            <Menu size={24} color={iconColor} />
           </TouchableOpacity>
         )}
       </View>
@@ -75,14 +80,14 @@ export function Header({
       <View style={[styles.titleSection, center && styles.titleCenter]}>
         {title && (
           <Text
-            style={[styles.title, transparent && styles.titleWhite]}
+            style={[styles.title, { color: themeColors.text }, transparent && styles.titleWhite]}
             numberOfLines={1}
           >
             {title}
           </Text>
         )}
         {subtitle && (
-          <Text style={[styles.subtitle, transparent && styles.subtitleWhite]}>
+          <Text style={[styles.subtitle, { color: themeColors.subtext }, transparent && styles.subtitleWhite]}>
             {subtitle}
           </Text>
         )}

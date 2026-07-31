@@ -9,26 +9,18 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, BellOff, Check, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, Info, TriangleAlert as AlertTriangle, Clock } from 'lucide-react-native';
+import { Bell, BellOff, Check, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, Info, TriangleAlert as AlertTriangle, Clock, Trash2 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { Header } from '@/components/ui';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'success' | 'warning' | 'error' | 'info';
-  read: boolean;
-  created_at: string;
-  scheme_id?: string;
-}
+import { Notification } from '@/types';
 
 export default function NotificationsScreen() {
   const { user, token } = useAuthStore();
+  const storeNotifs = useNotificationStore((state) => state.notifications);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [loading, setLoading] = useState(true);
@@ -36,20 +28,30 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     loadNotifications();
-  }, [user?.id]);
+  }, [user?.id, token]);
 
   const loadNotifications = async () => {
-    if (!token) return;
-
-    try {
-      setLoading(true);
-      const data = await getNotifications(token);
-      setNotifications(data || []);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-    } finally {
-      setLoading(false);
+    if (token) {
+      try {
+        setLoading(true);
+        const data = await getNotifications(token);
+        if (data && Array.isArray(data) && data.length > 0) {
+          setNotifications(data);
+          return;
+        }
+      } catch (error) {
+        // Fallback to local store notifications if backend API is unavailable
+      } finally {
+        setLoading(false);
+      }
     }
+    setNotifications(storeNotifs || []);
+    setLoading(false);
+  };
+
+  const deleteNotification = (notificationId: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+    useNotificationStore.getState().deleteNotification(notificationId);
   };
 
   const onRefresh = React.useCallback(() => {
@@ -123,8 +125,9 @@ export default function NotificationsScreen() {
     <TouchableOpacity
       onPress={() => {
         markAsRead(item.id);
-        if (item.scheme_id) {
-          router.push(`/scheme/${item.scheme_id}`);
+        const sId = item.scheme_id || item.schemeId;
+        if (sId) {
+          router.push(`/scheme/${sId}`);
         } else {
           router.push(`/notification/${item.id}`);
         }
@@ -158,7 +161,7 @@ export default function NotificationsScreen() {
           <View style={styles.timeRow}>
             <Clock size={12} color={Colors.gray.text} />
             <Text style={styles.notificationTime}>
-              {formatTimeAgo(new Date(item.created_at))}
+              {formatTimeAgo(new Date(item.created_at || item.createdAt || Date.now()))}
             </Text>
           </View>
         </View>
@@ -178,6 +181,17 @@ export default function NotificationsScreen() {
             {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
           </Text>
         </View>
+
+        <TouchableOpacity
+          onPress={(e) => {
+            e.stopPropagation();
+            deleteNotification(item.id);
+          }}
+          style={{ padding: 6, marginLeft: 2 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Trash2 size={16} color={Colors.gray.icon} />
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );

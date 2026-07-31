@@ -52,10 +52,15 @@ const onboardingData: Array<{
   },
 ];
 
+import { getThemeColors } from '@/constants/colors';
+import { useSettingsStore } from '@/store/settingsStore';
+
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const { setOnboardingCompleted } = useAuthStore();
+  const isDarkMode = useSettingsStore(state => state.isDarkMode);
+  const themeColors = getThemeColors(isDarkMode);
 
   const handleNext = () => {
     if (currentIndex < onboardingData.length - 1) {
@@ -74,7 +79,7 @@ export default function OnboardingScreen() {
   const renderItem = ({ item, index }: { item: typeof onboardingData[0]; index: number }) => {
     const Icon = item.icon;
     return (
-      <View style={styles.slide}>
+      <View style={[styles.slide, { width }]}>
         <LinearGradient
           colors={item.gradient}
           start={{ x: 0, y: 0 }}
@@ -88,16 +93,16 @@ export default function OnboardingScreen() {
 
         <View style={styles.contentContainer}>
           <Text style={styles.subtitle}>{item.subtitle}</Text>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.description}>{item.description}</Text>
+          <Text style={[styles.title, { color: themeColors.text }]}>{item.title}</Text>
+          <Text style={[styles.description, { color: themeColors.subtext }]}>{item.description}</Text>
         </View>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
       <View style={styles.skipContainer}>
         {currentIndex < onboardingData.length - 1 && (

@@ -27,7 +27,7 @@ interface SchemeState {
   getApplications: () => Application[];
   getApplicationById: (id: string) => Application | undefined;
   getApplicationsByStatus: (status: string) => Application[];
-  createApplication: (schemeId: string) => Application;
+  createApplication: (schemeId: string, userId?: string) => Application;
   updateApplication: (id: string, updates: Partial<Application>) => void;
 }
 
@@ -96,7 +96,7 @@ export const useSchemeStore = create<SchemeState>()(
       getApplicationsByStatus: (status: string) =>
         get().applications.filter(a => a.status === status),
 
-      createApplication: (schemeId: string) => {
+      createApplication: (schemeId: string, userId?: string) => {
         const scheme = get().getSchemeById(schemeId);
         if (!scheme) throw new Error('Scheme not found');
 
@@ -104,7 +104,7 @@ export const useSchemeStore = create<SchemeState>()(
           id: Date.now().toString(),
           schemeId,
           schemeName: scheme.name,
-          userId: '1',
+          userId: userId || '1',
           status: 'draft',
           currentStep: 1,
           totalSteps: 6,

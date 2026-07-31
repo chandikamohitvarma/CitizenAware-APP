@@ -46,7 +46,7 @@ export default function ApplicationDetailScreen() {
   if (loading || !app) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header title="Application Details" showBack onBackPress={() => router.canGoBack() ? router.back() : router.push('/application/tracking')} />
+        <Header title="Application Details" showBack onBackPress={() => router.replace('/application/tracking')} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color={Colors.primary.blue} />
         </View>
@@ -87,7 +87,7 @@ export default function ApplicationDetailScreen() {
       <Header
         title="Application Details"
         showBack
-        onBackPress={() => router.canGoBack() ? router.back() : router.push('/application/tracking')}
+        onBackPress={() => router.replace('/application/tracking')}
       />
 
       <ScrollView style={styles.content}>

@@ -57,7 +57,7 @@ const u02: [string, () => void][] = [
   ['TC-U-039 register creates user with provided phone', () => eq(mockRegUser('Ravi','r@b.com','9876543210','Pass@1').phone, '9876543210')],
   ['TC-U-040 register assigns unique string id', () => ok(mockRegUser('Ravi','r@b.com','9876543210','Pass@1').id)],
   ['TC-U-041 register sets createdAt timestamp', () => ok(mockRegUser('Ravi','r@b.com','9876543210','Pass@1').createdAt)],
-  ['TC-U-042 register createdAt is valid ISO date', () => ok(!isNaN(new Date(mockRegUser('Ravi','r@b.com','9876543210','Pass@1').createdAt).getTime()))],
+  ['TC-U-042 register createdAt is valid ISO date', () => ok(!isNaN(new Date(mockRegUser('Ravi','r@b.com','9876543210','Pass@1').createdAt!).getTime()))],
   ['TC-U-043 register name trimmed of whitespace', () => eq('Ravi Kumar',' Ravi Kumar '.trim())],
   ['TC-U-044 register email lowercased', () => eq('r@b.com','R@B.COM'.toLowerCase())],
   ['TC-U-045 register phone must be exactly 10 digits', () => eq(/^\d{10}$/.test('9876543210'), true)],
@@ -118,7 +118,7 @@ describe('API-03 Auth — OTP & Password', () => { u03.forEach(([n, f]) => test(
 const u04: [string, () => void][] = [
   ['TC-U-091 updateProfile changes name', () => eq(applyUpdate({name:'New'}).name,'New')],
   ['TC-U-092 updateProfile changes phone', () => eq(applyUpdate({phone:'9000000001'}).phone,'9000000001')],
-  ['TC-U-093 updateProfile changes city', () => eq(applyUpdate({address:{street:'',city:'Mumbai',state:'MH',pincode:'400001'}}).address.city,'Mumbai')],
+  ['TC-U-093 updateProfile changes city', () => eq(applyUpdate({address:{street:'',city:'Mumbai',state:'MH',pincode:'400001'}}).address!.city,'Mumbai')],
   ['TC-U-094 updateProfile preserves unchanged fields', () => ok(applyUpdate({phone:'9000000001'}).email)],
   ['TC-U-095 updateProfile preserves user id', () => ok(applyUpdate({name:'X'}).id)],
   ['TC-U-096 setLanguage stores hi', () => eq(setLang('hi'),'hi')],
@@ -131,7 +131,7 @@ const u04: [string, () => void][] = [
   ['TC-U-103 setLanguage stores en', () => eq(setLang('en'),'en')],
   ['TC-U-104 setOnboarding true sets flag', () => eq(true, true)],
   ['TC-U-105 setOnboarding false resets flag', () => eq(false, false)],
-  ['TC-U-106 user address is an object with 4 keys', () => eq(Object.keys(baseUser.address).length, 4)],
+  ['TC-U-106 user address is an object with 4 keys', () => eq(Object.keys(baseUser.address!).length, 4)],
   ['TC-U-107 user has bankDetails field optional', P],
   ['TC-U-108 user has income field optional', P],
   ['TC-U-109 user has dateOfBirth field optional', P],
@@ -151,7 +151,7 @@ const u04: [string, () => void][] = [
   ['TC-U-117 updateProfile with gender stores value', () => eq(applyUpdate({gender:'male'}).gender,'male')],
   ['TC-U-118 updateProfile pincode updates correctly', () => {
     const u = applyUpdate({address:{street:'1 Main St',city:'Delhi',state:'DL',pincode:'110001'}});
-    eq(u.address.pincode,'110001');
+    eq(u.address!.pincode,'110001');
   }],
   ['TC-U-119 languages array has 8 items', () => eq(languages.length, 8)],
   ['TC-U-120 languages all have code name native', () => { languages.forEach(l => { ok(l.code); ok(l.name); ok(l.native); }); }],

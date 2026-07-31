@@ -3,40 +3,50 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check } from 'lucide-react-native';
 import { router } from 'expo-router';
-import { Colors } from '@/constants/colors';
+import { Colors, getThemeColors } from '@/constants/colors';
 import { Header } from '@/components/ui';
 import { useSettingsStore } from '@/store/settingsStore';
 import { languages } from '@/constants/data';
 
 export default function LanguageSettingsScreen() {
-  const { language, setLanguage } = useSettingsStore();
+  const { language, setLanguage, isDarkMode } = useSettingsStore();
   const [selected, setSelected] = useState(language);
+  const themeColors = getThemeColors(isDarkMode);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Header title="Language" showBack onBackPress={() => router.back()} />
-      <ScrollView style={styles.content}>
-        <Text style={styles.subtitle}>Choose your preferred language</Text>
-        {languages.map((lang) => (
-          <TouchableOpacity
-            key={lang.code}
-            style={[styles.item, selected === lang.code && styles.itemActive]}
-            onPress={() => {
-              setSelected(lang.code);
-              setLanguage(lang.code);
-            }}
-          >
-            <View style={styles.info}>
-              <Text style={[styles.name, selected === lang.code && styles.nameActive]}>{lang.name}</Text>
-              <Text style={styles.native}>{lang.native}</Text>
-            </View>
-            {selected === lang.code && (
-              <View style={styles.check}>
-                <Check size={16} color={Colors.white} />
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <Header title="Language" showBack onBackPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))} />
+      <ScrollView style={[styles.content, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.subtitle, { color: themeColors.subtext }]}>Choose your preferred language</Text>
+        {languages.map((lang) => {
+          const isSelected = selected === lang.code;
+          return (
+            <TouchableOpacity
+              key={lang.code}
+              style={[
+                styles.item,
+                {
+                  backgroundColor: isSelected ? Colors.primary.blue : themeColors.itemBg,
+                  borderColor: isSelected ? Colors.primary.blue : themeColors.border,
+                },
+              ]}
+              onPress={() => {
+                setSelected(lang.code);
+                setLanguage(lang.code);
+              }}
+            >
+              <View style={styles.info}>
+                <Text style={[styles.name, { color: isSelected ? Colors.white : themeColors.text }]}>{lang.name}</Text>
+                <Text style={[styles.native, { color: isSelected ? 'rgba(255,255,255,0.85)' : themeColors.subtext }]}>{lang.native}</Text>
               </View>
-            )}
-          </TouchableOpacity>
-        ))}
+              {isSelected && (
+                <View style={styles.check}>
+                  <Check size={16} color={Colors.white} />
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );

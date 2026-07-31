@@ -40,11 +40,14 @@ export default function ForgotPasswordScreen() {
     setError('');
 
     try {
-      await requestPasswordReset(email);
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      await AsyncStorage.setItem(`citizenaware_otp_${email}`, generatedOtp);
       await AsyncStorage.setItem(RESET_EMAIL_KEY, email);
-      setEmailSent(true);
-    } catch (resetError: any) {
-      setError(resetError?.message || 'Failed to send reset email');
+      await requestPasswordReset(email, generatedOtp);
+      router.push('/auth/otp');
+    } catch {
+      await AsyncStorage.setItem(RESET_EMAIL_KEY, email);
+      router.push('/auth/otp');
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +119,7 @@ export default function ForgotPasswordScreen() {
         >
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/auth/login'))}
           >
             <ArrowLeft size={24} color={Colors.dark} />
           </TouchableOpacity>
@@ -134,7 +137,7 @@ export default function ForgotPasswordScreen() {
             </View>
             <Text style={styles.title}>Forgot Password?</Text>
             <Text style={styles.subtitle}>
-              No worries! Enter your email and we'll send you reset instructions.
+              Enter your email address to receive a 6-digit verification code.
             </Text>
           </View>
 
@@ -157,7 +160,7 @@ export default function ForgotPasswordScreen() {
             />
 
             <AppButton
-              title="Send Reset Instructions"
+              title="Send Verification Code"
               onPress={handleResetPassword}
               loading={isLoading}
               icon={<Send size={20} color={Colors.white} />}
@@ -167,7 +170,7 @@ export default function ForgotPasswordScreen() {
 
             <View style={styles.infoBox}>
               <Text style={styles.infoText}>
-                We'll send you an email with a link to reset your password. The link will expire in 1 hour.
+                We'll send a 6-digit verification code to your email address to reset your password.
               </Text>
             </View>
           </View>

@@ -10,11 +10,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Mail, Phone, Lock, ArrowLeft, CircleCheck as CheckCircle2 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
-import { Colors } from '@/constants/colors';
+import { Colors, getThemeColors } from '@/constants/colors';
 import { AppButton, AppInput, Logo } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function RegisterScreen() {
+  const isDarkMode = useSettingsStore(state => state.isDarkMode);
+  const themeColors = getThemeColors(isDarkMode);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -28,12 +31,12 @@ export default function RegisterScreen() {
   const [phoneError, setPhoneError] = useState('');
   const { register, error: authError } = useAuthStore();
 
-  const isGmail = (value: string) => /@gmail\.com$/i.test(value.trim());
+  const isGmail = (value: string) => /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(value.trim());
   const isTenDigitPhone = (value: string) => /^\d{10}$/.test(value.replace(/\s/g, ''));
 
   const validateEmail = (value: string) => {
     if (!value.trim()) { setEmailError(''); return; }
-    if (!isGmail(value)) { setEmailError('Only @gmail.com addresses are allowed'); return; }
+    if (!isGmail(value)) { setEmailError('Only @gmail.com email addresses are allowed'); return; }
     setEmailError('');
   };
 
@@ -54,19 +57,16 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     setError('');
+    setSuccess('');
+    setPasswordErrors([]);
 
     if (!name || !email || !phone || !password || !confirmPassword) {
       setError('Please fill in all fields');
       return;
     }
 
-    if (!isGmail(email)) {
-      setError('Only @gmail.com addresses are allowed');
-      return;
-    }
-
-    if (!isTenDigitPhone(phone)) {
-      setError('Phone number must be exactly 10 digits');
+    if (!email.trim().toLowerCase().endsWith('@gmail.com')) {
+      setError('Only @gmail.com email addresses are allowed');
       return;
     }
 
@@ -87,11 +87,11 @@ export default function RegisterScreen() {
     try {
       const success = await register(name, email, phone, password);
       if (!success) {
-        setError(authError || 'Registration failed. Please try again.');
+        setError('Registration failed. Please check your details and try again.');
         return;
       }
       setSuccess('Account created successfully! Please sign in to continue.');
-      setTimeout(() => router.replace('/auth/login'), 1500);
+      setTimeout(() => router.replace('/auth/login'), 1200);
     } catch {
       setError('An error occurred. Please try again.');
     } finally {
@@ -100,14 +100,14 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
+          style={[styles.backButton, { backgroundColor: themeColors.card, borderColor: themeColors.border, borderWidth: 1 }]}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/auth/login'))}
           disabled={isLoading}
         >
-          <ArrowLeft size={22} color={Colors.dark} />
+          <ArrowLeft size={22} color={themeColors.text} />
         </TouchableOpacity>
 
         {/* Logo & Heading */}
@@ -115,8 +115,8 @@ export default function RegisterScreen() {
           <View style={styles.logoWrapper}>
             <Logo size={72} />
           </View>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Access 180+ government schemes</Text>
+          <Text style={[styles.title, { color: themeColors.text }]}>Create Account</Text>
+          <Text style={[styles.subtitle, { color: themeColors.subtext }]}>Access 180+ government schemes</Text>
         </View>
 
         {/* Form */}
@@ -131,8 +131,8 @@ export default function RegisterScreen() {
           />
 
           <AppInput
-            label="Email Address (must be @gmail.com)"
-            placeholder="username@gmail.com"
+            label="Email Address"
+            placeholder="your@email.com"
             value={email}
             onChangeText={(text) => { setEmail(text); validateEmail(text); }}
             keyboardType="email-address"

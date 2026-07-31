@@ -1,22 +1,28 @@
 import { Tabs, router } from 'expo-router';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Hop as Home, FileText, MessageCircle, Bell, User } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { getNotifications } from '@/lib/api';
 import { useEffect, useState } from 'react';
 
-import { useNotificationStore } from '@/store/notificationStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { t } from '@/constants/translations';
 
 export default function TabLayout() {
   const { user, token, isAuthenticated } = useAuthStore();
   const storeNotifs = useNotificationStore(state => state.notifications);
+  const language = useSettingsStore(state => state.language);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace('/auth/login');
+      const timer = setTimeout(() => {
+        router.replace('/auth/login');
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated]);
 
@@ -25,11 +31,13 @@ export default function TabLayout() {
       if (token) {
         try {
           const notifications = await getNotifications(token);
-          const count = notifications.filter((n: any) => !n.read).length;
-          setUnreadCount(count);
-          return;
+          if (notifications && Array.isArray(notifications) && notifications.length > 0) {
+            const count = notifications.filter((n: any) => !n.read).length;
+            setUnreadCount(count);
+            return;
+          }
         } catch (error) {
-          console.error('Failed to load unread notifications from API', error);
+          // Fallback to storeNotifs
         }
       }
       setUnreadCount(storeNotifs.filter((n: any) => !n.read).length);
@@ -62,7 +70,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('home', language),
           tabBarIcon: ({ size, color }) => (
             <Home size={size} color={color} strokeWidth={2} />
           ),
@@ -71,7 +79,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="schemes"
         options={{
-          title: 'Schemes',
+          title: t('schemes', language),
           tabBarIcon: ({ size, color }) => (
             <FileText size={size} color={color} strokeWidth={2} />
           ),
@@ -80,7 +88,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="ai"
         options={{
-          title: 'AI',
+          title: t('ai', language),
           tabBarIcon: ({ size, color, focused }) => (
             <View style={styles.aiButton}>
               <LinearGradient
@@ -99,24 +107,46 @@ export default function TabLayout() {
       <Tabs.Screen
         name="notifications"
         options={{
-          title: 'Alerts',
-          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: Colors.error,
-            fontSize: 10,
-            minWidth: 18,
-            height: 18,
-            borderRadius: 9,
-          },
+          title: t('alerts', language),
           tabBarIcon: ({ size, color }) => (
-            <Bell size={size} color={color} strokeWidth={2} />
+            <View style={{ width: size + 10, height: size, alignItems: 'center', justifyContent: 'center' }}>
+              <Bell size={size} color={color} strokeWidth={2} />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    backgroundColor: Colors.error,
+                    borderRadius: 9,
+                    minWidth: 18,
+                    height: 18,
+                    paddingHorizontal: 4,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: '#FFFFFF',
+                      fontSize: 10,
+                      fontWeight: '700',
+                      textAlign: 'center',
+                      includeFontPadding: false,
+                    }}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('profile', language),
           tabBarIcon: ({ size, color }) => (
             <User size={size} color={color} strokeWidth={2} />
           ),

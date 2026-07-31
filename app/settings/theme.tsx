@@ -1,20 +1,38 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '@/constants/colors';
+import { Colors, getThemeColors } from '@/constants/colors';
 import { Header } from '@/components/ui';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function ThemeSettingsScreen() {
-  const [theme, setTheme] = useState('system');
+  const { isDarkMode, toggleDarkMode } = useSettingsStore();
+  const themeColors = getThemeColors(isDarkMode);
+
+  const selectedThemeId = isDarkMode ? 'dark' : 'light';
+
+  const handleSelectTheme = (id: string) => {
+    if (id === 'dark' && !isDarkMode) {
+      toggleDarkMode();
+    } else if (id === 'light' && isDarkMode) {
+      toggleDarkMode();
+    } else if (id === 'system') {
+      if (isDarkMode) toggleDarkMode();
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Header title="Theme" showBack onBackPress={() => router.back()} />
-      <View style={styles.content}>
-        <Text style={styles.subtitle}>Choose how CitizenAware looks</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <Header
+        title="Theme"
+        showBack
+        onBackPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}
+      />
+      <View style={[styles.content, { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.subtitle, { color: themeColors.subtext }]}>Choose how CitizenAware looks</Text>
 
         {[
           { id: 'light', title: 'Light', desc: 'Classic light theme' },
@@ -23,20 +41,25 @@ export default function ThemeSettingsScreen() {
         ].map((t) => (
           <TouchableOpacity
             key={t.id}
-            style={[styles.item, theme === t.id && styles.itemActive]}
-            onPress={() => setTheme(t.id)}
+            style={[
+              styles.item,
+              { backgroundColor: themeColors.itemBg, borderColor: selectedThemeId === t.id ? Colors.primary.blue : themeColors.border },
+            ]}
+            onPress={() => handleSelectTheme(t.id)}
           >
             <View style={styles.preview}>
               <LinearGradient
-                colors={['#fff', '#f8fafc']}
+                colors={t.id === 'dark' ? ['#0f172a', '#1e293b'] : ['#fff', '#f8fafc']}
                 style={styles.previewGrad}
               />
             </View>
             <View style={styles.info}>
-              <Text style={[styles.name, theme === t.id && styles.nameActive]}>{t.title}</Text>
-              <Text style={styles.desc}>{t.desc}</Text>
+              <Text style={[styles.name, { color: themeColors.text }, selectedThemeId === t.id && styles.nameActive]}>
+                {t.title}
+              </Text>
+              <Text style={[styles.desc, { color: themeColors.subtext }]}>{t.desc}</Text>
             </View>
-            {theme === t.id && <Check size={20} color={Colors.primary.blue} />}
+            {selectedThemeId === t.id && <Check size={20} color={Colors.primary.blue} />}
           </TouchableOpacity>
         ))}
       </View>

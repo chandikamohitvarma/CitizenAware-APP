@@ -41,6 +41,37 @@ export const Colors = {
   },
 };
 
+export function getThemeColors(isDarkMode: boolean) {
+  if (isDarkMode) {
+    return {
+      background: '#0F172A',
+      card: '#1E293B',
+      cardBorder: '#334155',
+      text: '#F8FAFC',
+      subtext: '#94A3B8',
+      icon: '#94A3B8',
+      headerBackground: '#0F172A',
+      headerText: '#F8FAFC',
+      itemBg: '#1E293B',
+      tabBar: '#1E293B',
+      border: '#334155',
+    };
+  }
+  return {
+    background: '#F8FAFC',
+    card: '#FFFFFF',
+    cardBorder: '#E2E8F0',
+    text: '#0F172A',
+    subtext: '#64748B',
+    icon: '#94A3B8',
+    headerBackground: '#F8FAFC',
+    headerText: '#0F172A',
+    itemBg: '#FFFFFF',
+    tabBar: '#FFFFFF',
+    border: '#E2E8F0',
+  };
+}
+
 export const Gradients = {
   blue: ['#2563EB', '#3B82F6'],
   green: ['#10B981', '#34D399'],

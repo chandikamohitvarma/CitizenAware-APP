@@ -11,10 +11,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, Bell, ChevronRight, TrendingUp, Clock, Sparkles, FileText, CircleCheck as CheckCircle2, CircleAlert as AlertCircle } from 'lucide-react-native';
-import { Colors } from '@/constants/colors';
+import { Colors, getThemeColors } from '@/constants/colors';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useSchemeStore } from '@/store/schemeStore';
+import { t } from '@/constants/translations';
 import { router } from 'expo-router';
 import { getSchemes, getApplications, getNotifications } from '@/lib/api';
+import { schemes as defaultSchemes } from '@/constants/data';
 
 interface Scheme {
   id: string;
@@ -26,6 +30,9 @@ interface Scheme {
 
 export default function HomeScreen() {
   const { user, token } = useAuthStore();
+  const { isDarkMode, language } = useSettingsStore();
+  const storeApps = useSchemeStore((state) => state.applications);
+  const themeColors = getThemeColors(isDarkMode);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [schemes, setSchemes] = useState<Scheme[]>([]);
@@ -34,33 +41,67 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [token, storeApps]);
 
   const loadData = async () => {
     try {
       setLoading(true);
 
-      const schemesData = await getSchemes();
-      setSchemes(schemesData || []);
+      const schemesData = await getSchemes().catch(() => null);
+      if (schemesData && Array.isArray(schemesData) && schemesData.length > 0) {
+        setSchemes(schemesData);
+      } else {
+        setSchemes(defaultSchemes as any);
+      }
 
+      let appList: Array<{ status: string }> = storeApps as any;
       if (token) {
-        const appData = (await getApplications(token)) as Array<{ status: string }>;
-        setApplications({
-          applied: appData.length,
-          approved: appData.filter(a => a.status === 'approved').length,
-          pending: appData.filter((a) => a.status === 'submitted').length,
-        });
+        try {
+          const appData = (await getApplications(token)) as Array<{ status: string }>;
+          if (appData && Array.isArray(appData) && appData.length > 0) {
+            appList = appData;
+          }
+        } catch {
+          // Fall back to local store
+        }
 
         try {
           const notifs = await getNotifications(token);
-          const unread = (notifs || []).filter((n: { read?: boolean }) => !n.read).length;
-          setUnreadCount(unread);
+          if (notifs && Array.isArray(notifs) && notifs.length > 0) {
+            const unread = notifs.filter((n: { read?: boolean }) => !n.read).length;
+            setUnreadCount(unread);
+          }
         } catch (err) {
-          setUnreadCount(0);
+          // Fall back
         }
       }
+
+      const filterUserApps = (list: any[]) => {
+        if (!user || user.id === '1' || (user.email && user.email.toLowerCase().includes('mohit'))) {
+          return list.filter(a => !a.userId || a.userId === '1' || (user?.id && a.userId === user.id));
+        }
+        return list.filter(a => a.userId === user.id);
+      };
+
+      const userAppList = filterUserApps(appList);
+
+      const totalApplied = userAppList.length;
+      const totalApproved = userAppList.filter(a => (a.status || '').toLowerCase() === 'approved').length;
+      const totalPending = userAppList.filter(a => ['submitted', 'in_review', 'pending', 'draft'].includes((a.status || '').toLowerCase())).length;
+
+      setApplications({
+        applied: totalApplied,
+        approved: totalApproved,
+        pending: totalPending,
+      });
     } catch (error) {
       console.error('Error loading data:', error);
+      setSchemes(defaultSchemes as any);
+      setApplications({
+        applied: storeApps.length,
+        approved: storeApps.filter(a => (a.status || '').toLowerCase() === 'approved').length,
+        pending: storeApps.filter(a => ['submitted', 'in_review', 'pending', 'draft'].includes((a.status || '').toLowerCase())).length,
+      });
     } finally {
       setLoading(false);
     }
@@ -73,21 +114,21 @@ export default function HomeScreen() {
 
   const quickStats = [
     {
-      label: 'Applied',
+      label: t('applied', language),
       value: applications.applied.toString(),
       icon: FileText,
       color: Colors.primary.blue,
       onPress: () => router.push('/application/tracking'),
     },
     {
-      label: 'Approved',
+      label: t('approved', language),
       value: applications.approved.toString(),
       icon: CheckCircle2,
       color: Colors.success,
       onPress: () => router.push('/application/tracking'),
     },
     {
-      label: 'Pending',
+      label: t('pending', language),
       value: applications.pending.toString(),
       icon: Clock,
       color: Colors.warning,
@@ -130,9 +171,9 @@ export default function HomeScreen() {
             <View style={styles.headerRow}>
               <View style={styles.headerText}>
                 <Text style={styles.greeting}>
-                  Welcome, {user?.name?.split(' ')[0] || 'Citizen'}!
+                  {t('welcome', language)}, {user?.name?.split(' ')[0] || 'Citizen'}!
                 </Text>
-                <Text style={styles.subtitle}>2026 Government Schemes</Text>
+                <Text style={styles.subtitle}>{t('governmentSchemes', language)}</Text>
               </View>
               <TouchableOpacity
                 onPress={() => router.push('/notifications')}
@@ -150,7 +191,7 @@ export default function HomeScreen() {
               activeOpacity={0.8}
             >
               <Search size={18} color={Colors.gray.icon} strokeWidth={2} />
-              <Text style={styles.searchText}>Search schemes & services</Text>
+              <Text style={styles.searchText}>{t('searchSchemes', language)}</Text>
               <ChevronRight size={18} color={Colors.gray.icon} />
             </TouchableOpacity>
           </SafeAreaView>
@@ -207,11 +248,11 @@ export default function HomeScreen() {
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionTitle}>Featured 2026 Schemes</Text>
-              <Text style={styles.sectionSubtitle}>Government's latest initiatives</Text>
+              <Text style={styles.sectionTitle}>{t('featuredSchemes', language)}</Text>
+              <Text style={styles.sectionSubtitle}>{t('governmentInitiatives', language)}</Text>
             </View>
             <TouchableOpacity onPress={() => router.push('/scheme/all')}>
-              <Text style={styles.viewAll}>View All</Text>
+              <Text style={styles.viewAll}>{t('viewAll', language)}</Text>
             </TouchableOpacity>
           </View>
 
@@ -245,8 +286,13 @@ export default function HomeScreen() {
                     {scheme.description}
                   </Text>
                   <View style={styles.schemeFooter}>
-                    <Text style={styles.appliedCount}>4.2K applied</Text>
-                    <ChevronRight size={16} color={Colors.primary.blue} />
+                    <Text style={styles.appliedCount}>4.2K {t('applied', language)}</Text>
+                    <TouchableOpacity
+                      style={styles.homeApplyBtn}
+                      onPress={() => router.push(`/apply/${scheme.id}`)}
+                    >
+                      <Text style={styles.homeApplyText}>{t('applyNow', language)}</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -261,7 +307,7 @@ export default function HomeScreen() {
 
         {/* Quick Actions Section */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>{t('quickActions', language)}</Text>
           <View style={styles.actionGrid}>
             <TouchableOpacity
               style={styles.actionButton}
@@ -271,7 +317,7 @@ export default function HomeScreen() {
               <View style={[styles.actionIcon, { backgroundColor: Colors.primary.blue + '15' }]}>
                 <FileText size={22} color={Colors.primary.blue} strokeWidth={2} />
               </View>
-              <Text style={styles.actionText}>Track</Text>
+              <Text style={styles.actionText}>{t('track', language)}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -282,7 +328,7 @@ export default function HomeScreen() {
               <View style={[styles.actionIcon, { backgroundColor: Colors.primary.green + '15' }]}>
                 <Sparkles size={22} color={Colors.primary.green} strokeWidth={2} />
               </View>
-              <Text style={styles.actionText}>Ask AI</Text>
+              <Text style={styles.actionText}>{t('askAi', language)}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -293,7 +339,7 @@ export default function HomeScreen() {
               <View style={[styles.actionIcon, { backgroundColor: Colors.warning + '15' }]}>
                 <TrendingUp size={22} color={Colors.warning} strokeWidth={2} />
               </View>
-              <Text style={styles.actionText}>Saved</Text>
+              <Text style={styles.actionText}>{t('saved', language)}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -559,6 +605,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.gray.text,
     fontWeight: '500',
+  },
+  homeApplyBtn: {
+    backgroundColor: Colors.primary.blue,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  homeApplyText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   loadingContainer: {
     paddingVertical: 40,

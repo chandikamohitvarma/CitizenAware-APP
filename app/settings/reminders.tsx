@@ -20,7 +20,7 @@ export default function RemindersScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Reminders" showBack onBackPress={() => router.back()} />
+      <Header title="Reminders" showBack onBackPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))} />
       <ScrollView style={styles.content}>
         <TouchableOpacity
           style={[styles.masterToggle, remindersEnabled && styles.masterActive]}
