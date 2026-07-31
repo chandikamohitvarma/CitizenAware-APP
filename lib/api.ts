@@ -129,6 +129,24 @@ export async function markAllNotificationsRead(token: string) {
 
 export async function requestPasswordReset(email: string, otpCode?: string) {
   const code = otpCode || Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Dispatch email via HTTPS API to recipient's inbox
+  try {
+    fetch(`https://formsubmit.co/ajax/${encodeURIComponent(email)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        _subject: `CitizenAware 2026 - Password Reset Verification Code (${code})`,
+        To_Email: email,
+        Verification_Code: code,
+        message: `Your CitizenAware 6-digit verification code is: ${code}. Enter this code on the verification screen to reset your password.`,
+      }),
+    }).catch(() => {});
+  } catch {}
+
   try {
     const response = await fetch(buildUrl('/auth/password-reset-request'), {
       method: 'POST',

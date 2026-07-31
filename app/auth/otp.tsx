@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { KeyRound, Sparkles, CheckCircle2 } from 'lucide-react-native';
+import { Mail, ShieldCheck } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { AppButton, Header } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
@@ -14,7 +14,6 @@ const RESET_EMAIL_KEY = 'citizenaware_password_reset_email';
 export default function OTPScreen() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [targetEmail, setTargetEmail] = useState('your email address');
-  const [currentOtp, setCurrentOtp] = useState('654321');
   const { verifyOTP, isLoading, error } = useAuthStore();
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
@@ -26,8 +25,8 @@ export default function OTPScreen() {
         if (!stored) {
           stored = Math.floor(100000 + Math.random() * 900000).toString();
           await AsyncStorage.setItem(`citizenaware_otp_${email}`, stored);
+          requestPasswordReset(email, stored).catch(() => {});
         }
-        setCurrentOtp(stored);
       }
     });
   }, []);
@@ -58,15 +57,10 @@ export default function OTPScreen() {
     }
   };
 
-  const handleAutoFill = () => {
-    const digits = currentOtp.split('');
-    setOtp(digits);
-  };
-
   const handleVerify = async () => {
     const otpCode = otp.join('');
     if (otpCode.length !== 6) {
-      Alert.alert('Error', 'Please enter the complete 6-digit OTP code');
+      Alert.alert('Error', 'Please enter the complete 6-digit verification code from your email.');
       return;
     }
     const success = await verifyOTP(otpCode);
@@ -79,13 +73,13 @@ export default function OTPScreen() {
     const newCode = Math.floor(100000 + Math.random() * 900000).toString();
     if (targetEmail) {
       await AsyncStorage.setItem(`citizenaware_otp_${targetEmail}`, newCode);
-      requestPasswordReset(targetEmail, newCode).catch(() => {});
+      await requestPasswordReset(targetEmail, newCode).catch(() => {});
     }
-    setCurrentOtp(newCode);
-    setOtp(newCode.split(''));
+    setOtp(['', '', '', '', '', '']);
+    inputRefs.current[0]?.focus();
     Alert.alert(
-      'New Verification Code',
-      `Your new 6-digit verification code is: ${newCode}`
+      'Verification Code Sent',
+      `A new 6-digit verification code has been sent to your email inbox (${targetEmail}). Please check your email inbox and spam folder.`
     );
   };
 
@@ -106,21 +100,17 @@ export default function OTPScreen() {
           <Text style={{ fontWeight: '700', color: Colors.primary.blue }}>{targetEmail}</Text>
         </Text>
 
-        {/* ── OTP Code Display Card Banner ── */}
-        <View style={styles.bannerCard}>
-          <View style={styles.bannerHeader}>
-            <KeyRound size={18} color="#2563EB" />
-            <Text style={styles.bannerTitle}>Your Verification Code</Text>
+        {/* ── Inbox Notice Card ── */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoIconBox}>
+            <Mail size={20} color="#2563EB" />
           </View>
-          <Text style={styles.bannerCode}>{currentOtp}</Text>
-          <TouchableOpacity
-            style={styles.autoFillBtn}
-            onPress={handleAutoFill}
-            activeOpacity={0.85}
-          >
-            <Sparkles size={14} color="#FFFFFF" />
-            <Text style={styles.autoFillText}>Tap to Auto-fill Code</Text>
-          </TouchableOpacity>
+          <View style={styles.infoTextBox}>
+            <Text style={styles.infoTitle}>Check Your Email Inbox</Text>
+            <Text style={styles.infoSub}>
+              Please check your email inbox (or spam / junk folder) for the 6-digit code.
+            </Text>
+          </View>
         </View>
 
         {/* ── 6 Digit Input Boxes ── */}
@@ -171,7 +161,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 30,
+    paddingTop: 32,
   },
   title: {
     fontSize: 24,
@@ -188,55 +178,38 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  /* Code Banner Card */
-  bannerCard: {
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: '#EFF6FF',
     borderColor: '#BFDBFE',
     borderWidth: 1.5,
     borderRadius: 16,
     padding: 16,
-    alignItems: 'center',
     marginBottom: 28,
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
   },
-  bannerHeader: {
-    flexDirection: 'row',
+  infoIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
+    justifyContent: 'center',
   },
-  bannerTitle: {
-    fontSize: 13,
+  infoTextBox: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: 14,
     fontWeight: '700',
     color: '#1E40AF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    marginBottom: 2,
   },
-  bannerCode: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#1E3A8A',
-    letterSpacing: 8,
-    marginVertical: 4,
-  },
-  autoFillBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 8,
-  },
-  autoFillText: {
+  infoSub: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#3B82F6',
+    lineHeight: 16,
   },
 
   otpContainer: {
