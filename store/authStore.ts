@@ -185,11 +185,8 @@ export const useAuthStore = create<AuthState>()(
             created_at: new Date().toISOString(),
           };
           const token = "citizen_auth_token_" + Date.now();
-          await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
           set({
-            isAuthenticated: true,
-            user,
-            token,
+            isAuthenticated: false,
             isLoading: false,
             error: null,
           });
