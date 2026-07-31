@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -45,13 +45,16 @@ export default function AddressDetailsScreen() {
   const handleStateSelect = (selectedState: string) => {
     setState(selectedState);
     setIsStateModalOpen(false);
-    // Reset district when state changes
     setCity('');
+    setDistrictSearchQuery('');
+    setTimeout(() => {
+      setIsDistrictModalOpen(true);
+    }, 250);
   };
 
   const handleNext = () => {
     if (!street || !state || !city || !pincode) {
-      Alert.alert('Error', 'Please fill in all required fields including state and district');
+      Alert.alert('Error', 'Please fill in all required fields including state and district/city');
       return;
     }
     router.push(`/apply/${id}/income`);
@@ -94,7 +97,7 @@ export default function AddressDetailsScreen() {
           style={[styles.selectorBtn, !state && styles.selectorBtnDisabled]}
           onPress={() => {
             if (!state) {
-              Alert.alert('Select State', 'Please select a state first to view districts.');
+              Alert.alert('Select State First', 'Please select your State / Union Territory first to view matching districts.');
               return;
             }
             setIsDistrictModalOpen(true);
@@ -108,6 +111,26 @@ export default function AddressDetailsScreen() {
           </View>
           <ChevronDown size={18} color={Colors.gray.icon} />
         </TouchableOpacity>
+
+        {/* Quick Select District Chips for chosen state */}
+        {state && availableDistricts.length > 0 ? (
+          <View style={styles.districtChipsSection}>
+            <Text style={styles.chipsTitle}>Popular Districts in {state}:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
+              {availableDistricts.slice(0, 10).map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  style={[styles.chip, city === d && styles.chipActive]}
+                  onPress={() => setCity(d)}
+                >
+                  <Text style={[styles.chipText, city === d && styles.chipTextActive]}>
+                    {d}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
 
         <AppInput
           label="Pincode"
@@ -233,48 +256,61 @@ const styles = StyleSheet.create({
   selectorLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   selectorText: { fontSize: 15, color: Colors.dark, fontWeight: '500' },
   placeholder: { color: Colors.gray.icon, fontWeight: '400' },
-  districtChipsSection: { marginBottom: 16 },
-  chipsTitle: { fontSize: 13, fontWeight: '500', color: Colors.gray.text, marginBottom: 8 },
-  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  districtChipsSection: { marginBottom: 16, marginTop: -4 },
+  chipsTitle: { fontSize: 12, fontWeight: '600', color: Colors.gray.text, marginBottom: 8 },
+  chipsRow: { flexDirection: 'row', gap: 8, paddingRight: 8 },
   chip: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: Colors.white,
+    paddingVertical: 6,
     borderRadius: 20,
+    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray.border,
   },
-  chipActive: { backgroundColor: Colors.primary.blue, borderColor: Colors.primary.blue },
-  chipText: { fontSize: 13, color: Colors.dark, fontWeight: '500' },
-  chipTextActive: { color: Colors.white },
-  modalContainer: { flex: 1, backgroundColor: Colors.white, padding: 16 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  chipActive: {
+    backgroundColor: Colors.primary.blue + '15',
+    borderColor: Colors.primary.blue,
+  },
+  chipText: { fontSize: 12, color: Colors.dark, fontWeight: '500' },
+  chipTextActive: { color: Colors.primary.blue, fontWeight: '700' },
+  modalContainer: { flex: 1, backgroundColor: Colors.white },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderColor: Colors.gray.border,
+  },
   modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.dark },
   searchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.gray.light,
-    borderRadius: 12,
+    borderRadius: 10,
+    margin: 16,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 12,
   },
   searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 15, color: Colors.dark },
+  searchInput: { flex: 1, height: 44, fontSize: 15, color: Colors.dark },
   listItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray.border,
+    borderColor: Colors.gray.light,
   },
   listItemActive: { backgroundColor: Colors.primary.blue + '10' },
-  listText: { fontSize: 15, color: Colors.dark },
-  listTextActive: { fontWeight: '700', color: Colors.primary.blue },
-  footer: { padding: 16, paddingBottom: 40, backgroundColor: Colors.white, borderTopWidth: 1, borderTopColor: Colors.gray.border },
-  stepsInfo: { marginBottom: 12 },
-  stepCurrent: { fontSize: 13, color: Colors.primary.blue, fontWeight: '600' },
-  stepLabel: { fontSize: 16, color: Colors.dark, fontWeight: '600' },
+  listText: { fontSize: 16, color: Colors.dark },
+  listTextActive: { color: Colors.primary.blue, fontWeight: '600' },
+  footer: {
+    padding: 16,
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray.border,
+  },
+  stepsInfo: { marginBottom: 8 },
+  stepCurrent: { fontSize: 12, color: Colors.primary.blue, fontWeight: '600' },
+  stepLabel: { fontSize: 14, fontWeight: '700', color: Colors.dark },
 });
