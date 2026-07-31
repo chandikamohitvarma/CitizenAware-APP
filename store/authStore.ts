@@ -152,6 +152,7 @@ export const useAuthStore = create<AuthState>()(
       register: async (name: string, email: string, phone: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
+          let registeredUser: User | null = null;
           try {
             if (supabase) {
               await supabase.auth.signUp({
@@ -160,27 +161,41 @@ export const useAuthStore = create<AuthState>()(
                 options: { data: { name, phone } },
               });
             }
-            await apiRegister(name, email, password, phone);
+            const apiRes = await apiRegister(name, email, password, phone);
+            if (apiRes && apiRes.id) {
+              registeredUser = {
+                id: String(apiRes.id),
+                email: apiRes.email || email,
+                name: apiRes.name || name,
+                phone: apiRes.phone || phone,
+                role: "citizen",
+                created_at: new Date().toISOString(),
+              };
+            }
           } catch {
-            // Gracefully handle backend offline mode
+            // Gracefully handle backend offline fallback
           }
 
-          const user: User = {
+          const user: User = registeredUser || {
             id: `user-${Date.now()}`,
             email,
             name,
             phone,
-            role: 'citizen',
+            role: "citizen",
             created_at: new Date().toISOString(),
           };
-          const token = 'citizen_auth_token_' + Date.now();
+          const token = "citizen_auth_token_" + Date.now();
+          await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
           set({
+            isAuthenticated: true,
+            user,
+            token,
             isLoading: false,
             error: null,
           });
           return true;
         } catch (error: any) {
-          set({ error: error?.message || 'Registration failed', isLoading: false });
+          set({ error: error?.message || "Registration failed", isLoading: false });
           return false;
         }
       },
