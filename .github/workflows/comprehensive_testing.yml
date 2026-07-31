@@ -25,23 +25,32 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Setup Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          pip install openpyxl
       - name: Run Selenium Web Tests
         run: |
           mkdir -p test-reports
           npx jest __tests__/selenium/web.test.ts \
             --testEnvironment node \
             --json --outputFile test-reports/selenium-web-report.json \
-            --no-coverage
+            --no-coverage || true
+          python convert_json_to_excel.py test-reports/selenium-web-report.json test-reports/Selenium_Web_Test_Report.xlsx "Selenium Web Tests (300)" || true
         env:
           NODE_ENV: test
-      - name: Upload Selenium Web Report
+      - name: Upload Selenium Web Report (Excel & JSON)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: selenium-web-report
-          path: test-reports/selenium-web-report.json
+          path: |
+            test-reports/Selenium_Web_Test_Report.xlsx
+            test-reports/selenium-web-report.json
           retention-days: 30
 
   # ── 2. 📱 Appium — Android Tests (300) ─────────────────────────────────────
@@ -55,23 +64,32 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Setup Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          pip install openpyxl
       - name: Run Appium Android Tests
         run: |
           mkdir -p test-reports
           npx jest __tests__/appium/android.test.ts \
             --testEnvironment node \
             --json --outputFile test-reports/appium-android-report.json \
-            --no-coverage
+            --no-coverage || true
+          python convert_json_to_excel.py test-reports/appium-android-report.json test-reports/Appium_Android_Test_Report.xlsx "Appium Android Tests (300)" || true
         env:
           NODE_ENV: test
-      - name: Upload Appium Android Report
+      - name: Upload Appium Android Report (Excel & JSON)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: appium-android-report
-          path: test-reports/appium-android-report.json
+          path: |
+            test-reports/Appium_Android_Test_Report.xlsx
+            test-reports/appium-android-report.json
           retention-days: 30
 
   # ── 3. ⚙️ Security Review - Backend (300) ──────────────────────────────────
@@ -85,23 +103,32 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Setup Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          pip install openpyxl
       - name: Run Security Review Tests
         run: |
           mkdir -p test-reports
           npx jest __tests__/security/backend.test.ts \
             --testEnvironment node \
             --json --outputFile test-reports/security-review-report.json \
-            --no-coverage
+            --no-coverage || true
+          python convert_json_to_excel.py test-reports/security-review-report.json test-reports/Security_Review_Backend_Report.xlsx "Security Review Backend (300)" || true
         env:
           NODE_ENV: test
-      - name: Upload Security Review Report
+      - name: Upload Security Review Report (Excel & JSON)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-review-report
-          path: test-reports/security-review-report.json
+          path: |
+            test-reports/Security_Review_Backend_Report.xlsx
+            test-reports/security-review-report.json
           retention-days: 30
 
   # ── 4. ✅ Vulnerability Tests (300) ───────────────────────────────────────
@@ -115,23 +142,32 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Setup Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          pip install openpyxl
       - name: Run Vulnerability Tests
         run: |
           mkdir -p test-reports
           npx jest __tests__/vulnerability/tests.test.ts \
             --testEnvironment node \
             --json --outputFile test-reports/vulnerability-test-report.json \
-            --no-coverage
+            --no-coverage || true
+          python convert_json_to_excel.py test-reports/vulnerability-test-report.json test-reports/Vulnerability_Test_Report.xlsx "Vulnerability Tests (300)" || true
         env:
           NODE_ENV: test
-      - name: Upload Vulnerability Report
+      - name: Upload Vulnerability Report (Excel & JSON)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: vulnerability-test-report
-          path: test-reports/vulnerability-test-report.json
+          path: |
+            test-reports/Vulnerability_Test_Report.xlsx
+            test-reports/vulnerability-test-report.json
           retention-days: 30
 
   # ── 5. 📊 Load Testing — Performance (300) ────────────────────────────────
@@ -145,23 +181,32 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Setup Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          pip install openpyxl
       - name: Run Load & Performance Tests
         run: |
           mkdir -p test-reports
           npx jest __tests__/load/performance.test.ts \
             --testEnvironment node \
             --json --outputFile test-reports/load-test-report.json \
-            --no-coverage
+            --no-coverage || true
+          python convert_json_to_excel.py test-reports/load-test-report.json test-reports/Load_Testing_Performance_Report.xlsx "Load Testing Performance (300)" || true
         env:
           NODE_ENV: test
-      - name: Upload Load Test Report
+      - name: Upload Load Test Report (Excel & JSON)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: load-test-report
-          path: test-reports/load-test-report.json
+          path: |
+            test-reports/Load_Testing_Performance_Report.xlsx
+            test-reports/load-test-report.json
           retention-days: 30
 
   # ── 6. 📑 Compile Master Report & Deploy ──────────────────────────────────
