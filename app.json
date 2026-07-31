@@ -4,7 +4,6 @@
     "slug": "citizenaware-2026",
     "version": "2.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
     "scheme": "citizenaware",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -18,8 +17,7 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "output": "single"
     },
     "plugins": ["expo-router", "expo-font", "expo-web-browser"],
     "experiments": {
