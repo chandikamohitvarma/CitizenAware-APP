@@ -409,6 +409,7 @@ export function evaluateProfileLocally(profile: any) {
   const occLower = occupation.toLowerCase();
   const state = (profile.state || 'Tamil Nadu').trim();
   const stateLower = state.toLowerCase();
+  const district = (profile.district || 'Chennai').trim();
   const category = (profile.category || profile.caste || 'EWS').trim().toUpperCase();
   const disability = Boolean(profile.disability);
   const education = (profile.education || 'Graduate').trim();

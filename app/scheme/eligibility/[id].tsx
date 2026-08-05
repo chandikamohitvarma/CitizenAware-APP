@@ -7,6 +7,7 @@ import { MapPin, Search, ChevronDown, Check, ShieldCheck, CircleCheck as CheckCi
 import { Colors } from '@/constants/colors';
 import { AppButton, AppInput, Header } from '@/components/ui';
 import { useSchemeStore } from '@/store/schemeStore';
+import { useAuthStore } from '@/store/authStore';
 import { schemes as fallbackSchemes } from '@/constants/data';
 import { INDIAN_STATES } from '@/constants/states';
 
