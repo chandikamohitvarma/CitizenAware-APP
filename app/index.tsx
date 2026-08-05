@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Text, StatusBar } from 'react-native';
+import { View, StyleSheet, Text, StatusBar, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
@@ -9,6 +9,8 @@ export default function SplashScreen() {
   const { isAuthenticated, onboardingCompleted } = useAuthStore();
 
   useEffect(() => {
+    // Fast redirect on web (100ms) so refreshes feel instant
+    const delay = Platform.OS === 'web' ? 100 : 1500;
     const timer = setTimeout(() => {
       if (!onboardingCompleted) {
         router.replace('/onboarding');
@@ -17,7 +19,7 @@ export default function SplashScreen() {
       } else {
         router.replace('/(tabs)');
       }
-    }, 2500);
+    }, delay);
 
     return () => clearTimeout(timer);
   }, [isAuthenticated, onboardingCompleted]);
@@ -45,6 +47,8 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    height: Platform.OS === 'web' ? ('100vh' as any) : undefined,
+    minHeight: Platform.OS === 'web' ? ('100vh' as any) : undefined,
     justifyContent: 'center',
     alignItems: 'center',
   },

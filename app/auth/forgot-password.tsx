@@ -12,10 +12,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, ArrowLeft, Send, CircleCheck as CheckCircle } from 'lucide-react-native';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safeStorage } from '@/lib/safeStorage';
 import { Colors } from '@/constants/colors';
 import { AppButton, AppInput } from '@/components/ui';
-import { requestPasswordReset } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 const RESET_EMAIL_KEY = 'citizenaware_password_reset_email';
 
@@ -24,6 +24,7 @@ export default function ForgotPasswordScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [emailSent, setEmailSent] = useState(false);
+  const { sendOTP } = useAuthStore();
 
   const handleResetPassword = async () => {
     if (!email) {
@@ -40,14 +41,22 @@ export default function ForgotPasswordScreen() {
     setError('');
 
     try {
-      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      await AsyncStorage.setItem(`citizenaware_otp_${email}`, generatedOtp);
-      await AsyncStorage.setItem(RESET_EMAIL_KEY, email);
-      await requestPasswordReset(email, generatedOtp);
+      // Store the email target for the OTP screen to reference
+      await safeStorage.setItem(RESET_EMAIL_KEY, email);
+      await safeStorage.setItem('citizenaware_otp_target', email);
+
+      // Call the backend to generate and dispatch the OTP
+      const result = await sendOTP(email);
+
+      if (!result.success) {
+        setError(result.message || 'Failed to send verification code. Please try again.');
+        return;
+      }
+
+      // Navigate to OTP entry screen
       router.push('/auth/otp');
-    } catch {
-      await AsyncStorage.setItem(RESET_EMAIL_KEY, email);
-      router.push('/auth/otp');
+    } catch (err: any) {
+      setError(err?.message || 'An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }

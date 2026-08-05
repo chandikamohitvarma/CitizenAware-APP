@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Bookmark, Users, Calendar, ChevronRight } from 'lucide-react-native';
+import { Bookmark, Users, Calendar, ChevronRight, AlertTriangle, Sparkles } from 'lucide-react-native';
+
 import { Colors } from '@/constants/colors';
 import { Scheme } from '@/types';
+import { isSchemeExpired } from '@/lib/schemeUtils';
 
 interface SchemeCardProps {
   scheme: Scheme;
@@ -13,6 +15,8 @@ interface SchemeCardProps {
 }
 
 export function SchemeCard({ scheme, onPress, onSave, isSaved = false, compact = false }: SchemeCardProps) {
+  const expired = isSchemeExpired(scheme);
+
   const content = (
     <>
       {scheme.image && !compact && (
@@ -20,7 +24,20 @@ export function SchemeCard({ scheme, onPress, onSave, isSaved = false, compact =
       )}
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.category}>{scheme.category}</Text>
+          <View style={styles.categoryRow}>
+            <Text style={styles.category}>{scheme.category}</Text>
+            <View style={styles.aiBadge}>
+              <Sparkles size={10} color="#047857" />
+              <Text style={styles.aiBadgeText}>AI Eligible</Text>
+            </View>
+            {expired && (
+              <View style={styles.expiredBadge}>
+                <AlertTriangle size={10} color="#991B1B" />
+                <Text style={styles.expiredBadgeText}>EXPIRED</Text>
+              </View>
+            )}
+          </View>
+
           {onSave && (
             <TouchableOpacity onPress={onSave} style={styles.bookmarkButton}>
               <Bookmark
@@ -43,8 +60,10 @@ export function SchemeCard({ scheme, onPress, onSave, isSaved = false, compact =
             <Text style={styles.statText}>{scheme.applied.toLocaleString()} applied</Text>
           </View>
           <View style={styles.stat}>
-            <Calendar size={14} color={Colors.gray.text} />
-            <Text style={styles.statText}>{scheme.deadline}</Text>
+            <Calendar size={14} color={expired ? '#DC2626' : Colors.gray.text} />
+            <Text style={[styles.statText, expired && styles.expiredStatText]}>
+              {expired ? `Ended ${scheme.deadline}` : scheme.deadline}
+            </Text>
           </View>
         </View>
         <View style={styles.benefits}>
@@ -95,11 +114,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   category: {
     fontSize: 12,
     fontWeight: '600',
     color: Colors.primary.blue,
     textTransform: 'uppercase',
+  },
+  aiBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#D1FAE5',
+    borderColor: '#6EE7B7',
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  aiBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#047857',
+  },
+
+  expiredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+  },
+  expiredBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#991B1B',
   },
   bookmarkButton: {
     padding: 4,
@@ -129,6 +186,10 @@ const styles = StyleSheet.create({
   statText: {
     fontSize: 12,
     color: Colors.gray.text,
+  },
+  expiredStatText: {
+    color: '#DC2626',
+    fontWeight: '700',
   },
   benefits: {
     flexDirection: 'row',

@@ -22,7 +22,9 @@ import {
   Calendar,
   Layers,
   Sparkles,
+  ChevronRight,
 } from 'lucide-react-native';
+
 import { router } from 'expo-router';
 import { Colors, getThemeColors } from '@/constants/colors';
 import { Header, EmptyState } from '@/components/ui';
@@ -60,7 +62,12 @@ export default function ApplicationTrackingScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterType>('all');
 
+  useEffect(() => {
+    loadApps();
+  }, []);
+
   const filterUserApps = (list: any[]) => {
+
     if (!user || user.id === '1' || (user.email && user.email.toLowerCase().includes('mohit'))) {
       return list.filter(a => !a.userId || a.userId === '1' || (user?.id && a.userId === user.id));
     }
@@ -306,7 +313,8 @@ export default function ApplicationTrackingScreen() {
               const statusColor = getStatusColor(status);
               const isDraft = status === 'draft' || status === 'pending';
               const schemeId = app.scheme_id || app.schemeId || '1';
-              const refNo = `REF-2026-00${index + 1}`;
+              const refNo = (app as any).reference_number || (app as any).referenceNumber || `GOV-2026-${String(app.id || index + 100000).slice(-6)}`;
+              const isDbSynced = Boolean((app as any).db_synced || (app as any).dbSynced || (app as any).reference_number);
 
               return (
                 <TouchableOpacity
@@ -326,6 +334,12 @@ export default function ApplicationTrackingScreen() {
                       <View style={[styles.refBadge, { backgroundColor: isDarkMode ? '#334155' : '#F1F5F9' }]}>
                         <Text style={[styles.refBadgeText, { color: themeColors.subtext }]}>{refNo}</Text>
                       </View>
+                      {isDbSynced && (
+                        <View style={styles.dbBadge}>
+                          <Sparkles size={10} color="#047857" />
+                          <Text style={styles.dbBadgeText}>Gov DB Synced</Text>
+                        </View>
+                      )}
                     </View>
 
                     <View style={[styles.statusBadge, { backgroundColor: statusColor + '18' }]}>
@@ -340,11 +354,11 @@ export default function ApplicationTrackingScreen() {
                     {getName(app)}
                   </Text>
 
-                  {/* Progress Section */}
+                  {/* 5-Stage Timeline Progress Section */}
                   <View style={styles.progressContainer}>
                     <View style={styles.progressHeaderRow}>
                       <Text style={[styles.progressStepText, { color: themeColors.text }]}>
-                        Step {step} of {total} <Text style={{ color: themeColors.subtext, fontWeight: '500' }}>({percent}%)</Text>
+                        Stage {step} of 5 <Text style={{ color: themeColors.subtext, fontWeight: '500' }}>({percent}%)</Text>
                       </Text>
                       {date ? (
                         <View style={styles.dateRow}>
@@ -370,7 +384,37 @@ export default function ApplicationTrackingScreen() {
                         style={[styles.progressBarFill, { width: `${percent}%` }]}
                       />
                     </View>
+
+                    {/* Timeline Stages Indicator */}
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
+                      {[
+                        '1. Application Created',
+                        '2. Docs Verified',
+                        '3. Under Review',
+                        '4. Approved',
+                        '5. Benefit Released',
+                      ].map((stageLabel, idx) => (
+                        <View
+                          key={idx}
+                          style={[
+                            styles.timelineChip,
+                            { backgroundColor: idx + 1 <= step ? '#D1FAE5' : '#F1F5F9' },
+                          ]}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              fontWeight: '700',
+                              color: idx + 1 <= step ? '#047857' : '#64748B',
+                            }}
+                          >
+                            {stageLabel}
+                          </Text>
+                        </View>
+                      ))}
+                    </ScrollView>
                   </View>
+
 
                   {/* Card Action Footer */}
                   <View style={[styles.cardFooter, { borderTopColor: isDarkMode ? '#334155' : '#F1F5F9' }]}>
@@ -387,8 +431,35 @@ export default function ApplicationTrackingScreen() {
           )}
         </View>
 
+        {/* Step 6 & 7: AI Assistant & Notifications Banner */}
+
+        <TouchableOpacity
+          style={styles.aiNavBanner}
+          onPress={() => router.push('/(tabs)/ai')}
+          activeOpacity={0.88}
+        >
+          <LinearGradient
+            colors={['#2563EB', '#0EA5E9']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.aiNavGradient}
+          >
+            <View style={styles.aiNavContent}>
+              <View style={styles.aiNavLeft}>
+                <Sparkles size={20} color="#FFFFFF" />
+                <View>
+                  <Text style={styles.aiNavTitle}>Have Questions About Your Application?</Text>
+                  <Text style={styles.aiNavSub}>Ask CitizenAware AI • Check Notifications & Announcements</Text>
+                </View>
+              </View>
+              <ChevronRight size={18} color="#FFFFFF" />
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
         <View style={{ height: 40 }} />
       </ScrollView>
+
 
       {/* Floating Plus FAB */}
       <TouchableOpacity
@@ -516,7 +587,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dbBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  dbBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#047857',
+  },
   refBadge: {
     paddingHorizontal: 9,
     paddingVertical: 4,
@@ -553,6 +640,45 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressBarFill: { height: '100%', borderRadius: 4 },
+  timelineChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginRight: 6,
+  },
+
+  aiNavBanner: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  aiNavGradient: {
+    padding: 14,
+  },
+  aiNavContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  aiNavLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  aiNavTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  aiNavSub: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 2,
+  },
+
+
 
   /* Action Footer */
   cardFooter: {

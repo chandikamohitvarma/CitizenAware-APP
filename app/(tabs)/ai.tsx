@@ -163,45 +163,72 @@ function generateSmartAIResponse(userQuery: string): AIResult {
   };
 }
 
+import { askAI } from '@/lib/gemini';
+import { useAuthStore } from '@/store/authStore';
+
 export default function AIScreen() {
   const [input, setInput] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
-  const { sendMessage, chatMessages: messages, isTyping, addAIResponse } = useNotificationStore();
+  const user = useAuthStore((state) => state.user);
+  const { sendMessage, chatMessages: messages, isTyping, addAIResponse, setTyping } = useNotificationStore();
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      addAIResponse(
+        "👋 Welcome! I am **CitizenAware AI** powered by Gemini.\n\nAsk me anything about:\n• Which government schemes am I eligible for?\n• What documents are required for PM Kisan?\n• Why am I not eligible?\n• Which scheme is best for me?\n• What is the status of my application?\n\nType a question below or tap a quick prompt!",
+        ['Run AI Eligibility Engine', 'What documents are required for PM Kisan?', 'Which scheme is best for me?', 'Ayushman Bharat Cover']
+      );
+    }
+  }, []);
 
   useEffect(() => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
-  }, [messages]);
+  }, [messages, isTyping]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
     const query = input.trim();
     sendMessage(query);
     setInput('');
+    setTyping(true);
 
-    setTimeout(() => {
+    try {
+      const res = await askAI(query, user);
+      addAIResponse(res.answer || res.text, res.suggestions);
+    } catch {
       const result = generateSmartAIResponse(query);
       addAIResponse(result.text, result.suggestions);
-    }, 600);
+    }
   };
 
-  const handleSuggestionPress = (suggestion: string) => {
+  const handleSuggestionPress = async (suggestion: string) => {
+    if (suggestion === 'Run AI Eligibility Engine' || suggestion === 'Check Scheme Eligibility') {
+      router.push('/scheme/ai-recommendations');
+      return;
+    }
     sendMessage(suggestion);
-    setTimeout(() => {
+    setTyping(true);
+    try {
+      const res = await askAI(suggestion, user);
+      addAIResponse(res.answer || res.text, res.suggestions);
+    } catch {
       const result = generateSmartAIResponse(suggestion);
       addAIResponse(result.text, result.suggestions);
-    }, 600);
+    }
   };
 
+
+
   const handleVoice = () => {
-    router.push('/ai/voice');
+    router.push('/scheme/ai-recommendations');
   };
 
   const quickActions = [
-    { label: 'Find Education Schemes', query: 'Show education schemes for students' },
-    { label: 'Check Eligibility', query: 'Am I eligible for government schemes?' },
-    { label: 'Track Applications', query: 'How do I track my applications status?' },
-    { label: 'Women & Girl Schemes', query: 'Show schemes for women and girl child' },
-    { label: 'Business & Loans', query: 'Show business loan and MUDRA schemes' },
+    { label: '🤖 AI Eligibility Evaluator', query: 'Run AI Eligibility Engine' },
+    { label: '🎓 Education & Scholarships', query: 'Show education schemes for students' },
+    { label: '🌾 Farmer & Agriculture', query: 'Show PM-Kisan and farmer schemes' },
+    { label: '🏥 Ayushman Health Cover', query: 'Show health and Ayushman Bharat schemes' },
+    { label: '💼 Business & MUDRA Loans', query: 'Show business loan and MUDRA schemes' },
   ];
 
   return (
@@ -217,11 +244,12 @@ export default function AIScreen() {
             <Sparkles size={24} color={Colors.white} />
             <View style={styles.headerText}>
               <Text style={styles.title}>AI Scheme Assistant</Text>
-              <Text style={styles.subtitle}>Ask me anything about 2026 government schemes</Text>
+              <Text style={styles.subtitle}>Ask anything about 2026 government schemes & eligibility</Text>
             </View>
           </View>
         </LinearGradient>
       </View>
+
 
       <ScrollView style={styles.quickActions} horizontal showsHorizontalScrollIndicator={false}>
         {quickActions.map((action, index) => (

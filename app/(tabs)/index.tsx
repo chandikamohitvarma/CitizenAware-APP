@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, Bell, ChevronRight, TrendingUp, Clock, Sparkles, FileText, CircleCheck as CheckCircle2, CircleAlert as AlertCircle } from 'lucide-react-native';
@@ -18,6 +20,10 @@ import { useSchemeStore } from '@/store/schemeStore';
 import { t } from '@/constants/translations';
 import { router } from 'expo-router';
 import { getSchemes, getApplications, getNotifications } from '@/lib/api';
+import { FloatingAIButton } from '@/components/ui/FloatingAIButton';
+import { evaluateAndProceedScheme } from '@/lib/eligibilityEngine';
+
+
 import { schemes as defaultSchemes } from '@/constants/data';
 
 interface Scheme {
@@ -32,7 +38,9 @@ export default function HomeScreen() {
   const { user, token } = useAuthStore();
   const { isDarkMode, language } = useSettingsStore();
   const storeApps = useSchemeStore((state) => state.applications);
+  const createApplication = useSchemeStore((state) => state.createApplication);
   const themeColors = getThemeColors(isDarkMode);
+
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [schemes, setSchemes] = useState<Scheme[]>([]);
@@ -160,7 +168,7 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header with Gradient */}
+        {/* 1. Welcome Card Header */}
         <LinearGradient
           colors={[Colors.primary.blue, '#2563EB']}
           start={{ x: 0, y: 0 }}
@@ -184,7 +192,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Modern Search Bar */}
+            {/* Search Bar */}
             <TouchableOpacity
               onPress={() => router.push('/scheme/search')}
               style={styles.searchBar}
@@ -197,25 +205,7 @@ export default function HomeScreen() {
           </SafeAreaView>
         </LinearGradient>
 
-        {/* Quick Stats Cards */}
-        <View style={styles.statsContainer}>
-          {quickStats.map((stat, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.statCard}
-              onPress={stat.onPress}
-              activeOpacity={0.75}
-            >
-              <View style={[styles.statIconContainer, { backgroundColor: stat.color + '15' }]}>
-                <stat.icon size={20} color={stat.color} strokeWidth={2} />
-              </View>
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* AI Recommendations Section */}
+        {/* 2. AI Recommendation Card */}
         <TouchableOpacity
           onPress={() => router.push('/scheme/ai-recommendations')}
           style={styles.aiCard}
@@ -233,9 +223,9 @@ export default function HomeScreen() {
                   <Sparkles size={22} color={Colors.white} strokeWidth={2} />
                 </View>
                 <View style={styles.aiText}>
-                  <Text style={styles.aiTitle}>AI-Powered Recommendations</Text>
+                  <Text style={styles.aiTitle}>AI-Powered Eligibility Engine</Text>
                   <Text style={styles.aiDescription}>
-                    Discover schemes perfectly matched to your profile
+                    Verify age, income, state & occupation against 100% database schemes
                   </Text>
                 </View>
               </View>
@@ -244,11 +234,53 @@ export default function HomeScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Featured Schemes Section */}
+        {/* 3. Eligible Schemes Carousel/Highlight Section */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionTitle}>{t('featuredSchemes', language)}</Text>
+              <Text style={styles.sectionTitle}>Eligible Schemes for You</Text>
+              <Text style={styles.sectionSubtitle}>Tailored to your age, income & state domicile</Text>
+            </View>
+            <TouchableOpacity onPress={() => router.push('/scheme/ai-recommendations')}>
+              <Text style={styles.viewAll}>Check All</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
+            {schemes.slice(0, 3).map((scheme) => (
+              <TouchableOpacity
+                key={`eligible-${scheme.id}`}
+                style={[styles.schemeCard, { width: 270, marginRight: 12, marginBottom: 4 }]}
+                onPress={() => router.push(`/scheme/eligibility/${scheme.id}`)}
+              >
+                <View style={styles.schemeContent}>
+                  <View style={[styles.schemeBadge, { backgroundColor: getCategoryColor(scheme.category) + '15' }]}>
+                    <Text style={[styles.schemeBadgeText, { color: getCategoryColor(scheme.category) }]}>
+                      {scheme.category}
+                    </Text>
+                  </View>
+                  <Text style={styles.schemeName} numberOfLines={1}>{scheme.name}</Text>
+                  <Text style={styles.schemeDescription} numberOfLines={2}>{scheme.description}</Text>
+                  <View style={styles.schemeFooter}>
+                    <Text style={styles.appliedCount}>100% Matched</Text>
+                    <TouchableOpacity
+                      style={styles.homeApplyBtn}
+                      onPress={() => router.push(`/scheme/eligibility/${scheme.id}`)}
+                    >
+                      <Text style={styles.homeApplyText}>Check Eligibility</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* 4. Latest Government Schemes Feed */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>Latest Government Schemes</Text>
               <Text style={styles.sectionSubtitle}>{t('governmentInitiatives', language)}</Text>
             </View>
             <TouchableOpacity onPress={() => router.push('/scheme/all')}>
@@ -289,9 +321,9 @@ export default function HomeScreen() {
                     <Text style={styles.appliedCount}>4.2K {t('applied', language)}</Text>
                     <TouchableOpacity
                       style={styles.homeApplyBtn}
-                      onPress={() => router.push(`/apply/${scheme.id}`)}
+                      onPress={() => router.push(`/scheme/eligibility/${scheme.id}`)}
                     >
-                      <Text style={styles.homeApplyText}>{t('applyNow', language)}</Text>
+                      <Text style={styles.homeApplyText}>Check Eligibility</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -305,74 +337,129 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Quick Actions Section */}
+        {/* 5. Active Applications */}
+        <View style={styles.statsContainer}>
+          {quickStats.map((stat, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.statCard}
+              onPress={stat.onPress}
+              activeOpacity={0.75}
+            >
+              <View style={[styles.statIconContainer, { backgroundColor: stat.color + '15' }]}>
+                <stat.icon size={20} color={stat.color} strokeWidth={2} />
+              </View>
+              <Text style={styles.statValue}>{stat.value}</Text>
+              <Text style={styles.statLabel}>{stat.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* 6. Pending Documents Banner */}
+        <TouchableOpacity
+          style={styles.docAlertCard}
+          onPress={() => router.push('/document/verification')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.docAlertLeft}>
+            <View style={styles.docAlertIcon}>
+              <FileText size={20} color="#D97706" />
+            </View>
+            <View style={styles.docAlertText}>
+              <Text style={styles.docAlertTitle}>Pending Documents Verification</Text>
+              <Text style={styles.docAlertDesc}>Upload Aadhaar, Income & Caste certificates for 1-click verification</Text>
+            </View>
+          </View>
+          <ChevronRight size={18} color="#D97706" />
+        </TouchableOpacity>
+
+        {/* 7. Notifications Bar */}
+        <TouchableOpacity
+          style={styles.infoBanner}
+          onPress={() => router.push('/notifications')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.bannerIcon}>
+            <Bell size={18} color={Colors.primary.blue} strokeWidth={2} />
+          </View>
+          <View style={styles.bannerText}>
+            <Text style={styles.bannerTitle}>Real-time Official Announcements</Text>
+            <Text style={styles.bannerDescription}>
+              Check new scheme launches, DBT credit releases & document update alerts.
+            </Text>
+          </View>
+          <ChevronRight size={18} color={Colors.primary.blue} />
+        </TouchableOpacity>
+
+        {/* 8. Quick Actions */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>{t('quickActions', language)}</Text>
           <View style={styles.actionGrid}>
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => router.push('/application/tracking')}
+              onPress={() => router.push('/(tabs)/schemes')}
               activeOpacity={0.8}
             >
               <View style={[styles.actionIcon, { backgroundColor: Colors.primary.blue + '15' }]}>
-                <FileText size={22} color={Colors.primary.blue} strokeWidth={2} />
+                <Search size={22} color={Colors.primary.blue} strokeWidth={2} />
               </View>
-              <Text style={styles.actionText}>{t('track', language)}</Text>
+              <Text style={styles.actionText}>Find Schemes</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => router.push('/ai/chat')}
+              onPress={() => router.push('/scheme/ai-recommendations')}
               activeOpacity={0.8}
             >
               <View style={[styles.actionIcon, { backgroundColor: Colors.primary.green + '15' }]}>
-                <Sparkles size={22} color={Colors.primary.green} strokeWidth={2} />
+                <CheckCircle2 size={22} color={Colors.primary.green} strokeWidth={2} />
               </View>
-              <Text style={styles.actionText}>{t('askAi', language)}</Text>
+              <Text style={styles.actionText}>Eligibility</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => router.push('/scheme/saved')}
+              onPress={() => router.push('/document/verification')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: '#8B5CF6' + '15' }]}>
+                <FileText size={22} color="#8B5CF6" strokeWidth={2} />
+              </View>
+              <Text style={styles.actionText}>Upload Docs</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push('/application/tracking')}
               activeOpacity={0.8}
             >
               <View style={[styles.actionIcon, { backgroundColor: Colors.warning + '15' }]}>
-                <TrendingUp size={22} color={Colors.warning} strokeWidth={2} />
+                <Clock size={22} color={Colors.warning} strokeWidth={2} />
               </View>
-              <Text style={styles.actionText}>{t('saved', language)}</Text>
+              <Text style={styles.actionText}>Track Apps</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => router.push('/support')}
+              onPress={() => router.push('/(tabs)/ai')}
               activeOpacity={0.8}
             >
-              <View style={[styles.actionIcon, { backgroundColor: Colors.error + '15' }]}>
-                <AlertCircle size={22} color={Colors.error} strokeWidth={2} />
+              <View style={[styles.actionIcon, { backgroundColor: '#EC4899' + '15' }]}>
+                <Sparkles size={22} color="#EC4899" strokeWidth={2} />
               </View>
-              <Text style={styles.actionText}>Support</Text>
+              <Text style={styles.actionText}>AI Assistant</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Info Banner */}
-        <View style={styles.infoBanner}>
-          <View style={styles.bannerIcon}>
-            <AlertCircle size={18} color={Colors.primary.blue} strokeWidth={2} />
-          </View>
-          <View style={styles.bannerText}>
-            <Text style={styles.bannerTitle}>Did you know?</Text>
-            <Text style={styles.bannerDescription}>
-              You may be eligible for schemes you haven't discovered yet. Use AI Recommendations!
-            </Text>
           </View>
         </View>
 
         <View style={{ height: 32 }} />
+
       </ScrollView>
+      <FloatingAIButton />
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -480,11 +567,44 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: Colors.gray.text,
-    fontWeight: '600',
+    fontWeight: '500',
   },
+
+  docAlertCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FEF3C7',
+    marginHorizontal: 20,
+    marginBottom: 14,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  docAlertLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  docAlertIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#F59E0B20',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  docAlertText: { flex: 1 },
+  docAlertTitle: { fontSize: 13, fontWeight: '700', color: '#92400E' },
+  docAlertSub: { fontSize: 11, color: '#B45309', lineHeight: 15, marginTop: 1 },
+  docAlertDesc: { fontSize: 11, color: '#B45309', lineHeight: 15, marginTop: 1 },
+
   aiCard: {
+
     marginHorizontal: 20,
     marginBottom: 20,
     borderRadius: 18,

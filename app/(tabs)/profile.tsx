@@ -96,6 +96,13 @@ export default function ProfileScreen() {
       description: 'Manage your address details',
     },
     {
+      icon: FileText,
+      label: 'Document Verification Vault',
+      color: Colors.primary.blue,
+      route: '/document/verification',
+      description: 'Upload & verify mandatory documents',
+    },
+    {
       icon: Bookmark,
       label: 'Saved Schemes',
       color: Colors.warning,
@@ -111,7 +118,15 @@ export default function ProfileScreen() {
     },
   ];
 
+
   const settingsItems = [
+    {
+      icon: Shield,
+      label: 'Scheme Admin Panel',
+      color: Colors.primary.blue,
+      route: '/admin/schemes',
+      description: 'Manage DB schemes & API sync',
+    },
     {
       icon: Settings,
       label: 'Settings',
@@ -127,6 +142,7 @@ export default function ProfileScreen() {
       description: 'FAQs & contact support',
     },
   ];
+
 
   const handleLogout = async () => {
     try {
@@ -192,9 +208,20 @@ export default function ProfileScreen() {
 
         <View style={styles.content}>
           {/* Contact Info Card */}
-          <View style={styles.infoCard}>
+          <TouchableOpacity
+            style={styles.infoCard}
+            onPress={() => router.push('/profile/personal')}
+            activeOpacity={0.88}
+          >
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Contact Information</Text>
+              <TouchableOpacity
+                style={styles.cardEditBadge}
+                onPress={() => router.push('/profile/personal')}
+              >
+                <Edit2 size={13} color={Colors.primary.blue} />
+                <Text style={styles.cardEditBadgeText}>Edit</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.infoItem}>
@@ -205,6 +232,7 @@ export default function ProfileScreen() {
                 <Text style={styles.infoLabel}>Email</Text>
                 <Text style={styles.infoText}>{user?.email || 'Not provided'}</Text>
               </View>
+              <ChevronRight size={16} color={Colors.gray.icon} />
             </View>
 
             <View style={styles.infoDivider} />
@@ -217,8 +245,10 @@ export default function ProfileScreen() {
                 <Text style={styles.infoLabel}>Phone</Text>
                 <Text style={styles.infoText}>{user?.phone || 'Not provided'}</Text>
               </View>
+              <ChevronRight size={16} color={Colors.gray.icon} />
             </View>
-          </View>
+          </TouchableOpacity>
+
 
           {/* Account Section */}
           <Text style={styles.sectionTitle}>Account</Text>
@@ -389,6 +419,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
@@ -399,6 +432,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.dark,
   },
+  cardEditBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primary.blue + '15',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  cardEditBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.primary.blue,
+  },
+
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',

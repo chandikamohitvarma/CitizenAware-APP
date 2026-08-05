@@ -3,17 +3,23 @@ import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import { AppButton, Header, ProgressStepper, UploadBox } from '@/components/ui';
+import { AppButton, Header, ProgressStepper, UploadBox, OfficialWebsiteBanner } from '@/components/ui';
 import { schemes as localSchemes } from '@/constants/data';
 import { getScheme } from '@/lib/api';
+import { useApplicationDraftStore } from '@/store/applicationDraftStore';
 
 export default function DocumentsScreen() {
   const { id } = useLocalSearchParams();
   const schemeId = id as string;
+  const { getDraft, updateDraft } = useApplicationDraftStore();
+  const draft = getDraft(schemeId);
 
   const [schemeName, setSchemeName] = useState<string>('');
   const [requiredDocs, setRequiredDocs] = useState<string[]>([]);
-  const [documents, setDocuments] = useState<Record<string, boolean>>({});
+  // documents state stays local for UI, but we sync to draft on change
+  const [documents, setDocuments] = useState<Record<string, boolean>>(
+    (draft.documents as Record<string, boolean>) || {}
+  );
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -71,9 +77,15 @@ export default function DocumentsScreen() {
   };
 
   const handleUpload = (docName: string) => {
-    setTimeout(() => {
-      setDocuments(prev => ({ ...prev, [docName]: true }));
-    }, 600);
+    const next = { ...documents, [docName]: true };
+    setDocuments(next);
+    updateDraft(schemeId, { documents: next });
+  };
+
+  const handleRemove = (docName: string) => {
+    const next = { ...documents, [docName]: false };
+    setDocuments(next);
+    updateDraft(schemeId, { documents: next });
   };
 
   const handleNext = () => {
@@ -91,6 +103,7 @@ export default function DocumentsScreen() {
       <ProgressStepper currentStep={4} />
 
       <ScrollView style={styles.content}>
+        <OfficialWebsiteBanner schemeId={schemeId} />
         <Text style={styles.sectionTitle}>Required Documents for {schemeName || 'Scheme'}</Text>
         <Text style={styles.sectionSubtitle}>
           Upload clear scanned copies or photos of official documents required for this scheme.
@@ -109,7 +122,7 @@ export default function DocumentsScreen() {
               description="PDF, JPG or PNG (max 2MB)"
               uploaded={documents[doc]}
               onUpload={() => handleUpload(doc)}
-              onRemove={() => setDocuments(prev => ({ ...prev, [doc]: false }))}
+              onRemove={() => handleRemove(doc)}
               required
             />
           ))

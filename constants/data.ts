@@ -112,6 +112,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'All India (Central)',
     image: 'https://images.pexels.com/photos/4226140/pexels-photo-4226140.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://pmvishwakarma.gov.in',
   },
   {
     id: '2',
@@ -133,6 +134,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'All India (Central)',
     image: 'https://images.pexels.com/photos/2165759/pexels-photo-2165759.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://pmkisan.gov.in',
   },
   {
     id: '3',
@@ -153,6 +155,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'All India (Central)',
     image: 'https://images.pexels.com/photos/236380/pexels-photo-236380.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://beneficiary.nha.gov.in',
   },
   {
     id: '4',
@@ -174,6 +177,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'All India (Central)',
     image: 'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://pmaymis.gov.in',
   },
   {
     id: '5',
@@ -195,6 +199,7 @@ export const schemes: Scheme[] = [
     featured: false,
     state: 'All India (Central)',
     image: 'https://images.pexels.com/photos/1128789/pexels-photo-1128789.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx',
   },
   {
     id: '6',
@@ -210,12 +215,13 @@ export const schemes: Scheme[] = [
       'Studying at recognized institution',
     ],
     documents: ['Aadhaar Card', 'Income Certificate', 'Marksheet', 'Institution Certificate'],
-    deadline: '2026-10-31',
+    deadline: '2026-11-30',
     status: 'active',
     applied: 15420,
     featured: true,
     state: 'All India (Central)',
     image: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://scholarships.gov.in',
   },
   {
     id: '7',
@@ -237,6 +243,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'All India (Central)',
     image: 'https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://www.standupmitra.in',
   },
   {
     id: '8',
@@ -257,6 +264,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'All India (Central)',
     image: 'https://images.pexels.com/photos/371900/pexels-photo-371900.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://pmsurya.gov.in',
   },
   {
     id: '9',
@@ -278,6 +286,7 @@ export const schemes: Scheme[] = [
     featured: false,
     state: 'All India (Central)',
     image: 'https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://www.mudra.org.in',
   },
   {
     id: '10',
@@ -298,6 +307,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'Telangana',
     image: 'https://images.pexels.com/photos/2165759/pexels-photo-2165759.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://rythubandhu.telangana.gov.in',
   },
   {
     id: '11',
@@ -318,6 +328,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'Andhra Pradesh',
     image: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://ysrammavodi.ap.gov.in',
   },
   {
     id: '12',
@@ -338,6 +349,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'Maharashtra',
     image: 'https://images.pexels.com/photos/1181271/pexels-photo-1181271.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://ladakibahin.maharashtra.gov.in',
   },
   {
     id: '13',
@@ -358,6 +370,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'Karnataka',
     image: 'https://images.pexels.com/photos/259132/pexels-photo-259132.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://sevasindhu.karnataka.gov.in',
   },
   {
     id: '14',
@@ -378,6 +391,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'Tamil Nadu',
     image: 'https://images.pexels.com/photos/1181271/pexels-photo-1181271.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://www.tn.gov.in/scheme/data_view/16849',
   },
   {
     id: '15',
@@ -398,6 +412,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'Uttar Pradesh',
     image: 'https://images.pexels.com/photos/1128789/pexels-photo-1128789.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://mksy.up.gov.in',
   },
   {
     id: '16',
@@ -418,6 +433,7 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'West Bengal',
     image: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://wbkanyashree.gov.in',
   },
   {
     id: '17',
@@ -438,53 +454,70 @@ export const schemes: Scheme[] = [
     featured: true,
     state: 'Delhi',
     image: 'https://images.pexels.com/photos/669622/pexels-photo-669622.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://edistrict.delhigovt.nic.in',
+  },
+  {
+    id: '18',
+    name: 'PM Digital Saksharta Abhiyan Phase 2 2026-27',
+    description: 'Digital literacy training program for rural households across India. Registrations open for FY 2026-27.',
+    category: 'Education',
+    ministry: 'Ministry of Electronics & IT',
+    benefits: 'Free 20-hour digital skill training',
+    eligibility: [
+      'Rural household member aged 14-60',
+      'Digitally illiterate',
+    ],
+    documents: ['Aadhaar Card'],
+    deadline: '2027-03-31',
+    status: 'active',
+    applied: 52100,
+    featured: false,
+    state: 'All India (Central)',
+    image: 'https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://www.pmgdisha.in',
+  },
+  {
+    id: '19',
+    name: 'National Talent Search Exam (NTSE) 2026-27',
+    description: 'National level scholarship exam for Class 10 students for academic session 2026-27.',
+    category: 'Education',
+    ministry: 'NCERT / Ministry of Education',
+    benefits: '₹1,250 per month scholarship',
+    eligibility: [
+      'Class 10 student',
+      'Minimum 60% marks in Class 9',
+    ],
+    documents: ['Class 9 Marksheet', 'Aadhaar Card', 'School ID'],
+    deadline: '2026-11-30',
+    status: 'active',
+    applied: 43200,
+    featured: false,
+    state: 'All India (Central)',
+    image: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=800',
+    officialUrl: 'https://ncert.nic.in',
   },
 ];
 
 export const notifications: Notification[] = [
   {
     id: '1',
-    title: 'Application Approved',
-    message: 'Your PM Scholarship 2026 application has been approved. Funds will be disbursed within 7 days.',
-    type: 'success',
+    title: 'Welcome to CitizenAware 2026',
+    message: 'Explore over 180+ central and state government schemes tailored for you.',
+    type: 'info',
     read: true,
     createdAt: '2026-07-28T10:30:00Z',
     created_at: '2026-07-28T10:30:00Z',
-    schemeId: '1',
-    scheme_id: '1',
   },
   {
     id: '2',
-    title: 'Documents Verified',
-    message: 'Your income certificate for Ayushman Bharat 2026 has been successfully verified.',
-    type: 'success',
-    read: true,
-    createdAt: '2026-07-29T14:20:00Z',
-    created_at: '2026-07-29T14:20:00Z',
-    schemeId: '2',
-    scheme_id: '2',
-  },
-  {
-    id: '3',
-    title: 'New 2026 Scheme Launched',
-    message: 'PM Surya Ghar Muft Bijli Yojana 2026 is now active. Get up to 300 units free electricity per month.',
+    title: 'PM Surya Ghar Muft Bijli Yojana 2026',
+    message: 'PM Surya Ghar Muft Bijli Yojana 2026 is active. Apply to receive solar panel rooftop subsidies.',
     type: 'info',
     read: true,
     createdAt: '2026-07-25T09:00:00Z',
     created_at: '2026-07-25T09:00:00Z',
     schemeId: '8',
     scheme_id: '8',
-  },
-  {
-    id: '4',
-    title: '2026 Installment Disbursed',
-    message: 'PM-Kisan 23rd installment 2026 has been successfully credited to your linked bank account.',
-    type: 'success',
-    read: true,
-    createdAt: '2026-07-30T11:45:00Z',
-    created_at: '2026-07-30T11:45:00Z',
-    schemeId: '3',
-    scheme_id: '3',
   },
 ];
 
@@ -634,12 +667,12 @@ export const chatMessages: Message[] = [
 ];
 
 export const aiResponses = {
-  greeting: 'Hello! I can help you discover government schemes tailored to your needs. What are you looking for?',
-  education: 'Based on your profile, here are the top education schemes you may be eligible for:\n\n1. PM Scholarship Scheme - Up to INR 50,000/year\n2. National Fellowship - Full tuition coverage\n3. Education Loan Subsidy - Lower interest rates',
-  healthcare: 'Here are healthcare schemes matching your criteria:\n\n1. Ayushman Bharat - INR 5 lakh coverage\n2. PMJAY - Cashless hospitalization\n3. State Health Scheme - Free checkups',
-  eligibility: 'To check your eligibility, I\'ll need some information. Let me ask you a few questions:',
-  track: 'You have 3 active applications:\n\n1. PM Scholarship - Approved\n2. Ayushman Bharat - In Review\n3. PM Kisan - Pending Documents',
-  default: 'I understand you\'re looking for information. Could you be more specific? I can help you with:\n\n• Finding schemes by category\n• Checking eligibility\n• Application status\n• Document requirements',
+  greeting: 'Hello! I am your CitizenAware 2026 AI Assistant. I can help you discover 180+ Central & State government schemes tailored to your needs. What are you looking for?',
+  education: 'Based on 2026 academic guidelines, here are top education schemes:\n\n1. National Scholarship Portal 2026-27 - Up to ₹50,000/year\n2. YSR Amma Vodi 2026 - ₹15,000/year for school students\n3. Kanyashree Prakalpa 2026 - ₹25,000 one-time education grant',
+  healthcare: 'Here are healthcare schemes for 2026:\n\n1. Ayushman Bharat PMJAY 2026 Expansion - ₹5 Lakh coverage (now free for all seniors 70+)\n2. PM Surakshit Matritva Abhiyan - Free maternal healthcare & diagnostics',
+  eligibility: 'To check your eligibility under 2026 guidelines, I can evaluate your state, income, and category. Tap any scheme or ask me!',
+  track: 'You have active applications:\n\n1. PM Vishwakarma Yojana 2026 - Approved\n2. Ayushman Bharat 2026 Expansion - Submitted / In Review\n3. National Scholarship Portal 2026-27 - Draft',
+  default: 'I can assist you with 2026 parameters for:\n\n• Central & State schemes by category\n• Instant eligibility assessment\n• Document checklists\n• Direct official portal links',
 };
 
 export const FAQs = [

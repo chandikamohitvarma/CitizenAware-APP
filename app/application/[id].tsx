@@ -68,12 +68,14 @@ export default function ApplicationDetailScreen() {
   const statusLabel = isDraft ? 'IN PROGRESS (DRAFT)' : status === 'submitted' || status === 'in_review' ? 'UNDER REVIEW' : status.toUpperCase();
 
   const timeline = [
-    { status: 'Submitted & Identity Verification', date: app.submitted_at ? new Date(app.submitted_at).toLocaleDateString('en-IN') : 'Submitted', icon: Upload, completed: true },
-    { status: 'Address & Category Check', date: 'Verification Complete', icon: FileText, completed: currentStep > 2 || isApproved },
-    { status: 'Documents Verification', date: 'Document Check', icon: Clock, completed: currentStep > 4 || isApproved },
-    { status: 'DBT Bank Account Verification', date: 'Bank Link Verified', icon: CheckCircle, completed: currentStep > 5 || isApproved },
-    { status: isApproved ? 'Approved & Benefit Issued' : isRejected ? 'Rejected' : 'Final Approval Pending', date: isApproved ? 'Sanctioned' : 'Processing', icon: isApproved ? CheckCircle : isRejected ? AlertCircle : Clock, completed: isApproved },
+    { status: 'Application Submitted / Saved', date: app.submitted_at ? new Date(app.submitted_at).toLocaleDateString('en-IN') : 'Submitted', icon: Upload, completed: true },
+    { status: 'Documents Verified', date: 'Mandatory Docs Verified', icon: FileText, completed: currentStep >= 2 || isApproved },
+    { status: 'Under Review by Department', date: 'Department Review', icon: Clock, completed: currentStep >= 3 || isApproved },
+    { status: 'Field Verification Officer Check', date: 'Inspection Complete', icon: Clock, completed: currentStep >= 4 || isApproved },
+    { status: isApproved ? 'Application Approved' : isRejected ? 'Application Rejected' : 'Approval Pending', date: isApproved ? 'Sanctioned' : 'In Progress', icon: isApproved ? CheckCircle : isRejected ? AlertCircle : Clock, completed: isApproved },
+    { status: isApproved ? 'Benefits Released via Direct Benefit Transfer (DBT)' : 'Disbursal Pending', date: isApproved ? 'Credited to Bank Account' : 'Pending', icon: CheckCircle, completed: isApproved },
   ];
+
 
   const docs = [
     { name: 'Aadhaar Identity Card', verified: true },

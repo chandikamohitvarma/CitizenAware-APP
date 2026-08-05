@@ -1,3 +1,5 @@
+import { STATE_DISTRICTS_MAP, getDistrictsForState } from './districts';
+
 export const INDIAN_STATES = [
   'All India (Central)',
   'Andhra Pradesh',
@@ -53,3 +55,8 @@ export const TOP_STATES = [
   'Rajasthan',
   'Bihar',
 ];
+
+export const STATE_DISTRICTS: Record<string, string[]> = STATE_DISTRICTS_MAP;
+export { getDistrictsForState };
+
+

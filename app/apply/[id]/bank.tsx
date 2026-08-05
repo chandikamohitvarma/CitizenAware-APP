@@ -14,26 +14,33 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Building2, Search, X, ChevronDown, Check } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
-import { AppButton, AppInput, Header, ProgressStepper } from '@/components/ui';
+import { AppButton, AppInput, Header, ProgressStepper, OfficialWebsiteBanner } from '@/components/ui';
 import { ALL_INDIAN_BANKS, TOP_INDIAN_BANKS } from '@/constants/banks';
+import { useApplicationDraftStore } from '@/store/applicationDraftStore';
 
 export default function BankDetailsScreen() {
   const { id } = useLocalSearchParams();
-  const [accountNumber, setAccountNumber] = useState('');
-  const [confirmAccount, setConfirmAccount] = useState('');
-  const [ifsc, setIfsc] = useState('');
-  const [bankName, setBankName] = useState('');
-  const [accountType, setAccountType] = useState('Savings');
+  const schemeId = String(id);
+  const { getDraft, updateDraft } = useApplicationDraftStore();
+  const draft = getDraft(schemeId);
+
+  const accountNumber = draft.accountNumber;
+  const confirmAccount = draft.confirmAccount;
+  const ifsc = draft.ifsc;
+  const bankName = draft.bankName;
+  const accountType = draft.accountType || 'Savings';
+  const customBankName = draft.customBankName;
+
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [customBankName, setCustomBankName] = useState('');
 
-  const filteredBanks = ALL_INDIAN_BANKS.filter(b =>
+  const filteredBanks = ALL_INDIAN_BANKS.filter((b) =>
     b.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleNext = () => {
-    const finalBankName = bankName === 'Other / Local Co-operative Bank' ? customBankName : bankName;
+    const finalBankName =
+      bankName === 'Other / Local Co-operative Bank' ? customBankName : bankName;
     if (!accountNumber || !confirmAccount || !ifsc || !finalBankName) {
       Alert.alert('Error', 'Please fill in all required fields including bank name');
       return;
@@ -42,23 +49,31 @@ export default function BankDetailsScreen() {
       Alert.alert('Error', 'Account numbers do not match');
       return;
     }
-    router.push(`/apply/${id}/review`);
+    router.push(`/apply/${schemeId}/review`);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Bank Details" showBack onBackPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)')} />
+      <Header
+        title="Bank Details"
+        showBack
+        onBackPress={() => (router.canGoBack() ? router.back() : router.push('/(tabs)'))}
+      />
       <ProgressStepper currentStep={5} />
 
       <ScrollView style={styles.content}>
+        <OfficialWebsiteBanner schemeId={schemeId} />
         <Text style={styles.sectionTitle}>Direct Benefit Transfer (DBT) Bank Info</Text>
 
         <Text style={styles.label}>Select Bank Name *</Text>
-        <TouchableOpacity style={styles.bankSelectorBtn} onPress={() => setIsBankModalOpen(true)}>
+        <TouchableOpacity
+          style={styles.bankSelectorBtn}
+          onPress={() => setIsBankModalOpen(true)}
+        >
           <View style={styles.bankSelectorLeft}>
             <Building2 size={18} color={bankName ? Colors.primary.blue : Colors.gray.icon} />
             <Text style={[styles.bankSelectorText, !bankName && styles.placeholder]}>
-              {bankName || 'Choose your bank in India'}
+              {bankName || 'Choose your bank...'}
             </Text>
           </View>
           <ChevronDown size={18} color={Colors.gray.icon} />
@@ -66,75 +81,74 @@ export default function BankDetailsScreen() {
 
         {bankName === 'Other / Local Co-operative Bank' && (
           <AppInput
-            label="Enter Custom Bank / Co-operative Bank Name"
-            placeholder="Type your local bank name"
+            label="Enter Custom Bank Name *"
+            placeholder="e.g. State Co-operative Bank"
             value={customBankName}
-            onChangeText={setCustomBankName}
+            onChangeText={(val) => updateDraft(schemeId, { customBankName: val })}
             required
           />
         )}
 
+
         <AppInput
-          label="Account Number"
-          placeholder="Enter bank account number"
+          label="Account Number *"
+          placeholder="Enter 9 to 18 digit bank account number"
           value={accountNumber}
-          onChangeText={setAccountNumber}
+          onChangeText={(val) => updateDraft(schemeId, { accountNumber: val })}
           keyboardType="numeric"
           required
         />
+
         <AppInput
-          label="Confirm Account Number"
-          placeholder="Re-enter account number"
+          label="Confirm Account Number *"
+          placeholder="Re-enter bank account number"
           value={confirmAccount}
-          onChangeText={setConfirmAccount}
+          onChangeText={(val) => updateDraft(schemeId, { confirmAccount: val })}
           keyboardType="numeric"
           required
         />
+
         <AppInput
-          label="IFSC Code"
-          placeholder="SBIN0001234"
+          label="IFSC Code *"
+          placeholder="e.g. SBIN0001234 (11 characters)"
           value={ifsc}
-          onChangeText={setIfsc}
+          onChangeText={(val) => updateDraft(schemeId, { ifsc: val.toUpperCase() })}
           autoCapitalize="characters"
+          maxLength={11}
           required
         />
 
         <Text style={styles.label}>Account Type *</Text>
         <View style={styles.typeRow}>
-          {['Savings', 'Current'].map((t) => (
+          {['Savings', 'Current', 'Jan Dhan'].map((t) => (
             <TouchableOpacity
               key={t}
               style={[styles.typeBtn, accountType === t && styles.typeBtnActive]}
-              onPress={() => setAccountType(t)}
+              onPress={() => updateDraft(schemeId, { accountType: t })}
             >
-              <Text style={[styles.typeText, accountType === t && styles.typeTextActive]}>{t}</Text>
+              <Text style={[styles.typeText, accountType === t && styles.typeTextActive]}>
+                {t}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
-
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>Secure Direct Benefit Transfer (DBT)</Text>
-          <Text style={styles.infoText}>
-            Your bank details will be linked to Aadhaar for Direct Benefit Transfer. All monetary scheme benefits will be credited directly to this account.
-          </Text>
-        </View>
       </ScrollView>
 
-      {/* Searchable Bank Picker Modal */}
+      {/* Bank Picker Modal */}
       <Modal visible={isBankModalOpen} animationType="slide">
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Your Bank in India</Text>
+            <Text style={styles.modalTitle}>Select Your Bank</Text>
             <TouchableOpacity onPress={() => setIsBankModalOpen(false)}>
               <X size={24} color={Colors.dark} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.searchBar}>
-            <Search size={18} color={Colors.gray.icon} style={{ marginRight: 8 }} />
+          <View style={styles.searchBarContainer}>
+            <Search size={18} color={Colors.gray.icon} style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search 50+ Indian Banks (SBI, HDFC, PNB...)..."
+              placeholder="Search 100+ Indian Banks..."
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -145,18 +159,15 @@ export default function BankDetailsScreen() {
             keyExtractor={(item) => item}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={[styles.bankListItem, bankName === item && styles.bankListItemActive]}
+                style={[styles.bankItem, bankName === item && styles.bankItemActive]}
                 onPress={() => {
-                  setBankName(item);
+                  updateDraft(schemeId, { bankName: item });
                   setIsBankModalOpen(false);
                 }}
               >
-                <View style={styles.bankItemLeft}>
-                  <Building2 size={18} color={bankName === item ? Colors.primary.blue : Colors.gray.icon} />
-                  <Text style={[styles.bankListText, bankName === item && styles.bankListTextActive]}>
-                    {item}
-                  </Text>
-                </View>
+                <Text style={[styles.bankText, bankName === item && styles.bankTextActive]}>
+                  {item}
+                </Text>
                 {bankName === item && <Check size={18} color={Colors.primary.blue} />}
               </TouchableOpacity>
             )}
@@ -169,7 +180,7 @@ export default function BankDetailsScreen() {
           <Text style={styles.stepCurrent}>Step 5 of 6</Text>
           <Text style={styles.stepLabel}>Bank Details</Text>
         </View>
-        <AppButton title="Continue to Review & Submit" onPress={handleNext} fullWidth />
+        <AppButton title="Continue to Review" onPress={handleNext} fullWidth />
       </View>
     </SafeAreaView>
   );
@@ -189,69 +200,80 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: Colors.gray.border,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   bankSelectorLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   bankSelectorText: { fontSize: 15, color: Colors.dark, fontWeight: '500' },
   placeholder: { color: Colors.gray.icon, fontWeight: '400' },
-  quickBankSection: { marginBottom: 16 },
-  quickTitle: { fontSize: 13, fontWeight: '500', color: Colors.gray.text, marginBottom: 8 },
-  quickBanksRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  bankChip: {
+  quickBanksRow: { flexDirection: 'row', gap: 8, marginBottom: 16, paddingRight: 8 },
+  quickBankChip: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: Colors.white,
+    paddingVertical: 6,
     borderRadius: 20,
+    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray.border,
   },
-  bankChipActive: { backgroundColor: Colors.primary.blue, borderColor: Colors.primary.blue },
-  bankChipText: { fontSize: 13, color: Colors.dark, fontWeight: '500' },
-  bankChipTextActive: { color: Colors.white },
-  typeRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  quickBankChipActive: {
+    backgroundColor: Colors.primary.blue + '15',
+    borderColor: Colors.primary.blue,
+  },
+  quickBankText: { fontSize: 12, color: Colors.dark, fontWeight: '500' },
+  quickBankTextActive: { color: Colors.primary.blue, fontWeight: '700' },
+  typeRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   typeBtn: {
     flex: 1,
     padding: 12,
-    backgroundColor: Colors.white,
     borderRadius: 10,
+    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray.border,
     alignItems: 'center',
   },
-  typeBtnActive: { backgroundColor: Colors.primary.blue, borderColor: Colors.primary.blue },
-  typeText: { fontWeight: '500', color: Colors.dark },
-  typeTextActive: { color: Colors.white },
-  infoBox: { backgroundColor: Colors.primary.blue + '10', borderRadius: 12, padding: 14, marginTop: 10, marginBottom: 24 },
-  infoTitle: { fontSize: 14, fontWeight: '600', color: Colors.primary.blue, marginBottom: 4 },
-  infoText: { fontSize: 13, color: Colors.gray.text, lineHeight: 18 },
-  modalContainer: { flex: 1, backgroundColor: Colors.white, padding: 16 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.dark },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.gray.light,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 12,
+  typeBtnActive: {
+    backgroundColor: Colors.primary.blue + '15',
+    borderColor: Colors.primary.blue,
   },
-  searchInput: { flex: 1, fontSize: 15, color: Colors.dark },
-  bankListItem: {
+  typeText: { fontSize: 13, color: Colors.dark, fontWeight: '500' },
+  typeTextActive: { color: Colors.primary.blue, fontWeight: '700' },
+  modalContainer: { flex: 1, backgroundColor: Colors.white },
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray.border,
+    borderColor: Colors.gray.border,
   },
-  bankListItemActive: { backgroundColor: Colors.primary.blue + '10' },
-  bankItemLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  bankListText: { fontSize: 15, color: Colors.dark },
-  bankListTextActive: { fontWeight: '700', color: Colors.primary.blue },
-  footer: { padding: 16, paddingBottom: 40, backgroundColor: Colors.white, borderTopWidth: 1, borderTopColor: Colors.gray.border },
-  stepsInfo: { marginBottom: 12 },
-  stepCurrent: { fontSize: 13, color: Colors.primary.blue, fontWeight: '600' },
-  stepLabel: { fontSize: 16, color: Colors.dark, fontWeight: '600' },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.dark },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.gray.light,
+    borderRadius: 10,
+    margin: 16,
+    paddingHorizontal: 12,
+  },
+  searchIcon: { marginRight: 8 },
+  searchInput: { flex: 1, height: 44, fontSize: 15, color: Colors.dark },
+  bankItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderColor: Colors.gray.light,
+  },
+  bankItemActive: { backgroundColor: Colors.primary.blue + '10' },
+  bankText: { fontSize: 15, color: Colors.dark },
+  bankTextActive: { color: Colors.primary.blue, fontWeight: '600' },
+  footer: {
+    padding: 16,
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray.border,
+  },
+  stepsInfo: { marginBottom: 8 },
+  stepCurrent: { fontSize: 12, color: Colors.primary.blue, fontWeight: '600' },
+  stepLabel: { fontSize: 14, fontWeight: '700', color: Colors.dark },
 });

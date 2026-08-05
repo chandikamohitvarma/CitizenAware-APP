@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safeStorage } from '@/lib/safeStorage';
 import { Lock, Check } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
@@ -18,7 +18,9 @@ export default function SetPasswordScreen() {
 
   useEffect(() => {
     const loadResetEmail = async () => {
-      const email = await AsyncStorage.getItem(RESET_EMAIL_KEY);
+      const email =
+        (await safeStorage.getItem(RESET_EMAIL_KEY)) ||
+        (await safeStorage.getItem('citizenaware_otp_target'));
       setResetEmail(email);
     };
 
@@ -40,7 +42,9 @@ export default function SetPasswordScreen() {
       return;
     }
 
-    if (!resetEmail) {
+    const emailToReset = resetEmail || (await safeStorage.getItem('citizenaware_otp_target'));
+
+    if (!emailToReset) {
       Alert.alert('Error', 'No reset email found. Please start the password reset flow again.');
       setIsSubmitting(false);
       return;
@@ -48,11 +52,20 @@ export default function SetPasswordScreen() {
 
     setIsSubmitting(true);
     try {
-      await completePasswordReset(resetEmail, password);
-      await AsyncStorage.removeItem(RESET_EMAIL_KEY);
-      Alert.alert('Success', 'Your password has been set successfully', [
-        { text: 'OK', onPress: () => router.replace('/auth/login') },
+      await completePasswordReset(emailToReset, password);
+      await safeStorage.removeItem(RESET_EMAIL_KEY);
+      await safeStorage.removeItem('citizenaware_otp_target');
+
+      Alert.alert('Success', 'Your password has been updated successfully! Please log in with your new password.', [
+        {
+          text: 'Go to Login',
+          onPress: () => router.replace('/auth/login'),
+        },
       ]);
+      // Fallback navigation in case Alert callback is skipped on web/Expo
+      setTimeout(() => {
+        router.replace('/auth/login');
+      }, 1500);
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to set password');
       setIsSubmitting(false);

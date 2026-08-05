@@ -14,16 +14,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Search, X, MapPin, Building, ChevronDown, Check } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
-import { AppButton, AppInput, Header, ProgressStepper } from '@/components/ui';
+import { AppButton, AppInput, Header, ProgressStepper, OfficialWebsiteBanner } from '@/components/ui';
 import { INDIAN_STATES } from '@/constants/states';
 import { getDistrictsForState } from '@/constants/districts';
+import { useApplicationDraftStore } from '@/store/applicationDraftStore';
 
 export default function AddressDetailsScreen() {
   const { id } = useLocalSearchParams();
-  const [street, setStreet] = useState('');
-  const [state, setState] = useState('');
-  const [city, setCity] = useState('');
-  const [pincode, setPincode] = useState('');
+  const schemeId = String(id);
+  const { getDraft, updateDraft } = useApplicationDraftStore();
+  const draft = getDraft(schemeId);
+
+  const street = draft.street;
+  const state = draft.state;
+  const city = draft.city;
+  const pincode = draft.pincode;
 
   // Modals state
   const [isStateModalOpen, setIsStateModalOpen] = useState(false);
@@ -32,20 +37,21 @@ export default function AddressDetailsScreen() {
   const [isDistrictModalOpen, setIsDistrictModalOpen] = useState(false);
   const [districtSearchQuery, setDistrictSearchQuery] = useState('');
 
-  const allStates = INDIAN_STATES.filter(s => s !== 'All India (Central)');
-  const filteredStates = allStates.filter(s =>
+  const allStates = INDIAN_STATES.filter((s) => s !== 'All India (Central)');
+  const filteredStates = allStates.filter((s) =>
     s.toLowerCase().includes(stateSearchQuery.toLowerCase())
   );
 
   const availableDistricts = state ? getDistrictsForState(state) : [];
-  const filteredDistricts = availableDistricts.filter(d =>
+  const filteredDistricts = availableDistricts.filter((d) =>
     d.toLowerCase().includes(districtSearchQuery.toLowerCase())
   );
 
   const handleStateSelect = (selectedState: string) => {
-    setState(selectedState);
+    const districts = getDistrictsForState(selectedState);
+    const defaultCity = districts.length > 0 ? districts[0] : '';
+    updateDraft(schemeId, { state: selectedState, city: defaultCity });
     setIsStateModalOpen(false);
-    setCity('');
     setDistrictSearchQuery('');
     setTimeout(() => {
       setIsDistrictModalOpen(true);
@@ -57,22 +63,27 @@ export default function AddressDetailsScreen() {
       Alert.alert('Error', 'Please fill in all required fields including state and district/city');
       return;
     }
-    router.push(`/apply/${id}/income`);
+    router.push(`/apply/${schemeId}/income`);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Address Details" showBack onBackPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)')} />
+      <Header
+        title="Address Details"
+        showBack
+        onBackPress={() => (router.canGoBack() ? router.back() : router.push('/(tabs)'))}
+      />
       <ProgressStepper currentStep={2} />
 
       <ScrollView style={styles.content}>
+        <OfficialWebsiteBanner schemeId={schemeId} />
         <Text style={styles.sectionTitle}>Residential Address</Text>
 
         <AppInput
           label="Street Address"
           placeholder="House No, Building, Street, Locality"
           value={street}
-          onChangeText={setStreet}
+          onChangeText={(val) => updateDraft(schemeId, { street: val })}
           multiline
           numberOfLines={2}
           required
@@ -112,31 +123,11 @@ export default function AddressDetailsScreen() {
           <ChevronDown size={18} color={Colors.gray.icon} />
         </TouchableOpacity>
 
-        {/* Quick Select District Chips for chosen state */}
-        {state && availableDistricts.length > 0 ? (
-          <View style={styles.districtChipsSection}>
-            <Text style={styles.chipsTitle}>Popular Districts in {state}:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
-              {availableDistricts.slice(0, 10).map((d) => (
-                <TouchableOpacity
-                  key={d}
-                  style={[styles.chip, city === d && styles.chipActive]}
-                  onPress={() => setCity(d)}
-                >
-                  <Text style={[styles.chipText, city === d && styles.chipTextActive]}>
-                    {d}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
-
         <AppInput
           label="Pincode"
           placeholder="6-digit postal code"
           value={pincode}
-          onChangeText={setPincode}
+          onChangeText={(val) => updateDraft(schemeId, { pincode: val })}
           keyboardType="numeric"
           maxLength={6}
           required
@@ -208,7 +199,7 @@ export default function AddressDetailsScreen() {
               <TouchableOpacity
                 style={[styles.listItem, city === item && styles.listItemActive]}
                 onPress={() => {
-                  setCity(item);
+                  updateDraft(schemeId, { city: item });
                   setIsDistrictModalOpen(false);
                 }}
               >
@@ -256,23 +247,6 @@ const styles = StyleSheet.create({
   selectorLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   selectorText: { fontSize: 15, color: Colors.dark, fontWeight: '500' },
   placeholder: { color: Colors.gray.icon, fontWeight: '400' },
-  districtChipsSection: { marginBottom: 16, marginTop: -4 },
-  chipsTitle: { fontSize: 12, fontWeight: '600', color: Colors.gray.text, marginBottom: 8 },
-  chipsRow: { flexDirection: 'row', gap: 8, paddingRight: 8 },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.gray.border,
-  },
-  chipActive: {
-    backgroundColor: Colors.primary.blue + '15',
-    borderColor: Colors.primary.blue,
-  },
-  chipText: { fontSize: 12, color: Colors.dark, fontWeight: '500' },
-  chipTextActive: { color: Colors.primary.blue, fontWeight: '700' },
   modalContainer: { flex: 1, backgroundColor: Colors.white },
   modalHeader: {
     flexDirection: 'row',

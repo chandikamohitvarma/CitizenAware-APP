@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Scheme, Application } from '@/types';
 import { schemes, applications } from '@/constants/data';
+import { getSchemes } from '@/lib/api';
 
 interface SchemeState {
   schemes: Scheme[];
@@ -12,6 +13,7 @@ interface SchemeState {
   isLoading: boolean;
 
   // Actions
+  fetchLatestSchemes: () => Promise<Scheme[]>;
   getSchemes: () => Scheme[];
   getSchemeById: (id: string) => Scheme | undefined;
   getSchemesByCategory: (category: string) => Scheme[];
@@ -27,19 +29,34 @@ interface SchemeState {
   getApplications: () => Application[];
   getApplicationById: (id: string) => Application | undefined;
   getApplicationsByStatus: (status: string) => Application[];
-  createApplication: (schemeId: string, userId?: string) => Application;
+  createApplication: (schemeId: string, userId?: string, schemeOverride?: { name: string; documents: string[] }, statusOverride?: 'draft' | 'submitted', refNumber?: string, dbSynced?: boolean) => Application;
   updateApplication: (id: string, updates: Partial<Application>) => void;
 }
 
 export const useSchemeStore = create<SchemeState>()(
   (set, get) => ({
       schemes: schemes,
-      applications: applications,
+      applications: [],
       savedSchemes: [],
       recentlyViewed: [],
       selectedCategory: null,
       searchQuery: '',
       isLoading: false,
+
+      fetchLatestSchemes: async () => {
+        set({ isLoading: true });
+        try {
+          const fetchedSchemes = await getSchemes();
+          if (Array.isArray(fetchedSchemes) && fetchedSchemes.length > 0) {
+            set({ schemes: fetchedSchemes, isLoading: false });
+            return fetchedSchemes;
+          }
+        } catch (error) {
+          console.warn('Could not fetch latest schemes from API, using cached/default schemes:', error);
+        }
+        set({ isLoading: false });
+        return get().schemes;
+      },
 
       getSchemes: () => get().schemes,
 
@@ -96,29 +113,41 @@ export const useSchemeStore = create<SchemeState>()(
       getApplicationsByStatus: (status: string) =>
         get().applications.filter(a => a.status === status),
 
-      createApplication: (schemeId: string, userId?: string) => {
+      createApplication: (
+        schemeId: string,
+        userId?: string,
+        schemeOverride?: { name: string; documents: string[] },
+        statusOverride: 'draft' | 'submitted' = 'submitted',
+        refNumber?: string,
+        dbSynced: boolean = true
+      ) => {
         const scheme = get().getSchemeById(schemeId);
-        if (!scheme) throw new Error('Scheme not found');
+        // Use local scheme data, or fall back to the override for API-sourced schemes with UUID ids
+        const schemeName = scheme?.name ?? schemeOverride?.name ?? 'Unknown Scheme';
+        const schemeDocs = scheme?.documents ?? schemeOverride?.documents ?? [];
+        const govRef = refNumber || `GOV-2026-${Math.floor(100000 + Math.random() * 900000)}`;
 
         const newApplication: Application = {
           id: Date.now().toString(),
           schemeId,
-          schemeName: scheme.name,
+          schemeName,
           userId: userId || '1',
-          status: 'draft',
-          currentStep: 1,
+          status: statusOverride,
+          currentStep: statusOverride === 'submitted' ? 6 : 1,
           totalSteps: 6,
           submittedAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          documents: scheme.documents.map(doc => ({
+          referenceNumber: govRef,
+          dbSynced: dbSynced,
+          documents: schemeDocs.map(doc => ({
             name: doc,
-            uploaded: false,
-            verified: false,
+            uploaded: true,
+            verified: statusOverride === 'submitted',
           })),
         };
 
         set(state => ({
-          applications: [...state.applications, newApplication],
+          applications: [newApplication, ...state.applications.filter(a => a.schemeId !== schemeId || a.status !== 'draft')],
         }));
 
         return newApplication;

@@ -9,6 +9,7 @@ from ..utils.dependencies import get_current_user
 router = APIRouter()
 
 
+@router.post("", response_model=ApplicationRead)
 @router.post("/", response_model=ApplicationRead)
 def create_application(application: ApplicationCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     db_application = Application(
@@ -24,6 +25,7 @@ def create_application(application: ApplicationCreate, db: Session = Depends(get
     return db_application
 
 
+@router.get("", response_model=list[ApplicationRead])
 @router.get("/", response_model=list[ApplicationRead])
 def list_applications(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     return db.query(Application).filter(Application.user_id == current_user.id).all()

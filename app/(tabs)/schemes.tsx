@@ -9,14 +9,20 @@ import {
   ActivityIndicator,
   ScrollView,
   Modal,
+  Linking,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, MapPin, X, ChevronDown, CheckCircle } from 'lucide-react-native';
+import { Search, MapPin, X, ChevronDown, CheckCircle, Sparkles } from 'lucide-react-native';
+
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { INDIAN_STATES, TOP_STATES } from '@/constants/states';
 import { getSchemes } from '@/lib/api';
 import { schemes as defaultSchemes } from '@/constants/data';
-import { INDIAN_STATES, TOP_STATES } from '@/constants/states';
+
+
+
 
 interface Scheme {
   id: string;
@@ -156,11 +162,17 @@ export default function SchemesScreen() {
             </Text>
           </View>
 
+          <View style={styles.aiTag}>
+            <Sparkles size={10} color="#047857" />
+            <Text style={styles.aiTagText}>AI Verified</Text>
+          </View>
+
           <View style={styles.stateTag}>
             <MapPin size={10} color={Colors.primary.blue} />
             <Text style={styles.stateTagText}>{item.state || 'Central'}</Text>
           </View>
         </View>
+
 
         <Text style={styles.schemeName} numberOfLines={2}>
           {item.name}
@@ -180,10 +192,15 @@ export default function SchemesScreen() {
 
           <TouchableOpacity
             style={styles.applyNowCardBtn}
-            onPress={() => router.push(`/apply/${item.id}`)}
+            onPress={() => router.push(`/scheme/eligibility/${item.id}`)}
           >
-            <Text style={styles.applyNowCardText}>Apply Now</Text>
+            <Text style={styles.applyNowCardText}>Check Eligibility</Text>
+
           </TouchableOpacity>
+
+
+
+
         </View>
       </View>
     </TouchableOpacity>
@@ -435,7 +452,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
+  aiTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#6EE7B7',
+  },
+  aiTagText: {
+    fontSize: 11,
+    color: '#047857',
+    fontWeight: '700',
+  },
   stateTag: {
+
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,

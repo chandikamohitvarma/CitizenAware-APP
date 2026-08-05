@@ -1,24 +1,29 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import { AppButton, AppInput, Header, ProgressStepper } from '@/components/ui';
+import { AppButton, AppInput, Header, ProgressStepper, OfficialWebsiteBanner } from '@/components/ui';
+import { useApplicationDraftStore } from '@/store/applicationDraftStore';
 
 export default function IncomeDetailsScreen() {
   const { id } = useLocalSearchParams();
-  const [annualIncome, setAnnualIncome] = useState('');
-  const [incomeSource, setIncomeSource] = useState('Salaried');
-  const [incomeCategory, setIncomeCategory] = useState('APL');
-  const [bplCardNumber, setBplCardNumber] = useState('');
-  const [incomeCertNumber, setIncomeCertNumber] = useState('');
+  const schemeId = String(id);
+  const { getDraft, updateDraft } = useApplicationDraftStore();
+  const draft = getDraft(schemeId);
+
+  const annualIncome = draft.annualIncome;
+  const incomeSource = draft.incomeSource || 'Salaried';
+  const incomeCategory = draft.incomeCategory || 'APL';
+  const bplCardNumber = draft.bplCardNumber;
+  const incomeCertNumber = draft.incomeCertNumber;
 
   const handleNext = () => {
     if (!annualIncome) {
       Alert.alert('Error', 'Please enter your annual family income');
       return;
     }
-    router.push(`/apply/${id}/documents`);
+    router.push(`/apply/${schemeId}/documents`);
   };
 
   const sources = ['Salaried', 'Self-Employed', 'Agriculture', 'Business', 'Daily Wage', 'Pensioner'];
@@ -32,17 +37,22 @@ export default function IncomeDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Income Details" showBack onBackPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)')} />
+      <Header
+        title="Income Details"
+        showBack
+        onBackPress={() => (router.canGoBack() ? router.back() : router.push('/(tabs)'))}
+      />
       <ProgressStepper currentStep={3} />
 
       <ScrollView style={styles.content}>
+        <OfficialWebsiteBanner schemeId={schemeId} />
         <Text style={styles.sectionTitle}>Income & Category Information</Text>
 
         <AppInput
           label="Annual Family Income (₹) *"
           placeholder="250000"
           value={annualIncome}
-          onChangeText={setAnnualIncome}
+          onChangeText={(val) => updateDraft(schemeId, { annualIncome: val })}
           keyboardType="numeric"
           required
         />
@@ -53,9 +63,11 @@ export default function IncomeDetailsScreen() {
             <TouchableOpacity
               key={src}
               style={[styles.chip, incomeSource === src && styles.chipActive]}
-              onPress={() => setIncomeSource(src)}
+              onPress={() => updateDraft(schemeId, { incomeSource: src })}
             >
-              <Text style={[styles.chipText, incomeSource === src && styles.chipTextActive]}>{src}</Text>
+              <Text style={[styles.chipText, incomeSource === src && styles.chipTextActive]}>
+                {src}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -66,36 +78,35 @@ export default function IncomeDetailsScreen() {
             <TouchableOpacity
               key={cat.code}
               style={[styles.catCard, incomeCategory === cat.code && styles.catCardActive]}
-              onPress={() => setIncomeCategory(cat.code)}
+              onPress={() => updateDraft(schemeId, { incomeCategory: cat.code })}
             >
-              <View style={[styles.radioDot, incomeCategory === cat.code && styles.radioDotActive]} />
-              <Text style={[styles.catText, incomeCategory === cat.code && styles.catTextActive]}>
+              <View style={styles.radioOuter}>
+                {incomeCategory === cat.code && <View style={styles.radioInner} />}
+              </View>
+              <Text
+                style={[styles.catLabel, incomeCategory === cat.code && styles.catLabelActive]}
+              >
                 {cat.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
+        {incomeCategory === 'BPL' && (
+          <AppInput
+            label="BPL Card Number"
+            placeholder="Enter BPL card number"
+            value={bplCardNumber}
+            onChangeText={(val) => updateDraft(schemeId, { bplCardNumber: val })}
+          />
+        )}
+
         <AppInput
           label="Income Certificate Number (Optional)"
-          placeholder="INC/2026/987654"
+          placeholder="e.g. INC/2026/XXXXX"
           value={incomeCertNumber}
-          onChangeText={setIncomeCertNumber}
+          onChangeText={(val) => updateDraft(schemeId, { incomeCertNumber: val })}
         />
-
-        <AppInput
-          label="Ration / BPL Card Number (Optional)"
-          placeholder="RAT123456789"
-          value={bplCardNumber}
-          onChangeText={setBplCardNumber}
-        />
-
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>Verification Note</Text>
-          <Text style={styles.infoText}>
-            Income details are verified with state civil supplies and income certificate documents uploaded in the next step.
-          </Text>
-        </View>
       </ScrollView>
 
       <View style={styles.footer}>
@@ -103,7 +114,7 @@ export default function IncomeDetailsScreen() {
           <Text style={styles.stepCurrent}>Step 3 of 6</Text>
           <Text style={styles.stepLabel}>Income Details</Text>
         </View>
-        <AppButton title="Continue to Documents" onPress={handleNext} fullWidth />
+        <AppButton title="Continue to Document Upload" onPress={handleNext} fullWidth />
       </View>
     </SafeAreaView>
   );
@@ -112,47 +123,62 @@ export default function IncomeDetailsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { flex: 1, padding: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', color: Colors.dark, marginBottom: 16 },
-  label: { fontSize: 14, fontWeight: '500', color: Colors.dark, marginTop: 12, marginBottom: 8 },
-  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.dark, marginBottom: 16 },
+  label: { fontSize: 14, fontWeight: '500', color: Colors.dark, marginBottom: 8, marginTop: 12 },
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   chip: {
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: Colors.white,
+    paddingVertical: 8,
     borderRadius: 20,
+    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray.border,
   },
-  chipActive: { backgroundColor: Colors.primary.blue, borderColor: Colors.primary.blue },
+  chipActive: {
+    backgroundColor: Colors.primary.blue + '15',
+    borderColor: Colors.primary.blue,
+  },
   chipText: { fontSize: 13, color: Colors.dark, fontWeight: '500' },
-  chipTextActive: { color: Colors.white },
+  chipTextActive: { color: Colors.primary.blue, fontWeight: '700' },
   categoryList: { gap: 8, marginBottom: 16 },
   catCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    backgroundColor: Colors.white,
+    padding: 12,
     borderRadius: 12,
+    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray.border,
+    gap: 12,
   },
-  catCardActive: { borderColor: Colors.primary.blue, backgroundColor: Colors.primary.blue + '08' },
-  radioDot: {
+  catCardActive: {
+    borderColor: Colors.primary.blue,
+    backgroundColor: Colors.primary.blue + '08',
+  },
+  radioOuter: {
     width: 18,
     height: 18,
     borderRadius: 9,
     borderWidth: 2,
     borderColor: Colors.gray.border,
-    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  radioDotActive: { borderColor: Colors.primary.blue, backgroundColor: Colors.primary.blue },
-  catText: { fontSize: 14, color: Colors.dark, fontWeight: '500' },
-  catTextActive: { color: Colors.primary.blue, fontWeight: '600' },
-  infoBox: { backgroundColor: Colors.primary.blue + '10', borderRadius: 12, padding: 14, marginTop: 12, marginBottom: 24 },
-  infoTitle: { fontSize: 14, fontWeight: '600', color: Colors.primary.blue, marginBottom: 4 },
-  infoText: { fontSize: 13, color: Colors.gray.text, lineHeight: 18 },
-  footer: { padding: 16, paddingBottom: 40, backgroundColor: Colors.white, borderTopWidth: 1, borderTopColor: Colors.gray.border },
-  stepsInfo: { marginBottom: 12 },
-  stepCurrent: { fontSize: 13, color: Colors.primary.blue, fontWeight: '600' },
-  stepLabel: { fontSize: 16, color: Colors.dark, fontWeight: '600' },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.primary.blue,
+  },
+  catLabel: { fontSize: 14, color: Colors.dark, fontWeight: '500' },
+  catLabelActive: { color: Colors.primary.blue, fontWeight: '700' },
+  footer: {
+    padding: 16,
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray.border,
+  },
+  stepsInfo: { marginBottom: 8 },
+  stepCurrent: { fontSize: 12, color: Colors.primary.blue, fontWeight: '600' },
+  stepLabel: { fontSize: 14, fontWeight: '700', color: Colors.dark },
 });

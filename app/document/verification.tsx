@@ -8,7 +8,9 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
+  Platform,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CircleCheck as CheckCircle2, CircleAlert as AlertCircle, Clock, Upload, FileText, RefreshCw } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -30,12 +32,15 @@ const REQUIRED_DOCS: Omit<DocumentItem, 'id' | 'status'>[] = [
   { name: 'Aadhaar Card', required: true },
   { name: 'PAN Card', required: true },
   { name: 'Income Certificate', required: true },
-  { name: 'Address Proof', required: true },
+  { name: 'Caste Certificate', required: true },
+  { name: 'Residence Certificate', required: true },
   { name: 'Bank Passbook', required: true },
-  { name: 'Education Certificate', required: false },
-  { name: 'Caste Certificate', required: false },
-  { name: 'Disability Certificate', required: false },
+  { name: 'Passport Photo', required: true },
+  { name: 'Education Certificate', required: true },
+  { name: 'Disability Certificate', required: true },
 ];
+
+
 
 export default function DocumentVerificationScreen() {
   const { user, token } = useAuthStore();
@@ -80,41 +85,90 @@ export default function DocumentVerificationScreen() {
           id: String(idx + 1),
           name: doc.name,
           required: doc.required,
-          status:
-            idx === 0
-              ? 'verified'
-              : idx === 1
-              ? 'pending'
-              : idx === 2
-              ? 'rejected'
-              : 'not_uploaded',
-          file_url: idx <= 1 ? `${doc.name.toLowerCase().replace(/ /g, '_')}.pdf` : undefined,
-          rejection_reason:
-            idx === 2 ? 'Document is blurry. Please upload a clear copy.' : undefined,
+          status: 'not_uploaded',
+          file_url: undefined,
+          rejection_reason: undefined,
         }))
       );
+
     } finally {
       setLoading(false);
     }
   };
 
+  const processDocUpload = (docName: string, source: string) => {
+    setDocs(prev =>
+      prev.map(d =>
+        d.name === docName
+          ? {
+              ...d,
+              status: 'verified',
+              file_url: `${docName.toLowerCase().replace(/ /g, '_')}_${source.toLowerCase()}.pdf`,
+              rejection_reason: undefined,
+            }
+          : d
+      )
+    );
+    Alert.alert('Document Uploaded', `${docName} uploaded via ${source} and verified.`);
+  };
+
+  const triggerFilePicker = (docName?: string) => {
+    const targetDoc = docName || docs.find(d => d.status === 'not_uploaded' || d.status === 'rejected')?.name || docs[0]?.name || 'Document';
+
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*,application/pdf';
+      input.onchange = (e: any) => {
+        const file = e.target?.files?.[0];
+        if (file) {
+          processDocUpload(targetDoc, file.name);
+        }
+      };
+      input.click();
+    } else {
+      handleUpload(targetDoc);
+    }
+  };
+
   const handleUpload = (docName: string) => {
+    if (Platform.OS === 'web') {
+      triggerFilePicker(docName);
+      return;
+    }
+
     Alert.alert('Upload Document', `Select a file for "${docName}"`, [
-      { text: 'Camera', onPress: () => {} },
-      { text: 'Gallery', onPress: () => {} },
-      { text: 'Files', onPress: () => {} },
+      { text: 'Camera', onPress: () => processDocUpload(docName, 'Camera') },
+      { text: 'Gallery', onPress: () => processDocUpload(docName, 'Gallery') },
+      { text: 'Files', onPress: () => processDocUpload(docName, 'File') },
       { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
+
+
   const handleSave = async () => {
+    const unuploadedRequired = docs.filter(d => d.required && (d.status === 'not_uploaded' || d.status === 'rejected'));
+    if (unuploadedRequired.length > 0) {
+      const names = unuploadedRequired.map(d => `• ${d.name}`).join('\n');
+      Alert.alert(
+        'Warning: Mandatory Documents Missing',
+        `The following required document(s) have not been uploaded yet:\n\n${names}\n\nPlease upload all mandatory documents to complete verification.`,
+        [
+          { text: 'Upload Now', style: 'default' },
+        ]
+      );
+      return;
+    }
+
     setSaving(true);
     await new Promise(r => setTimeout(r, 800));
     setSaving(false);
-    Alert.alert('Saved', 'Document information has been saved.', [
-      { text: 'OK', onPress: () => router.back() },
+    Alert.alert('Documents Verified & Saved', 'All mandatory documents have been uploaded and saved.', [
+      { text: 'Proceed to Applications & Tracking', onPress: () => router.push('/application/tracking') },
     ]);
   };
+
 
   const getStatusColor = (status: DocumentItem['status']) => {
     switch (status) {
@@ -149,10 +203,18 @@ export default function DocumentVerificationScreen() {
   const rejected = docs.filter(d => d.status === 'rejected').length;
   const notUploaded = docs.filter(d => d.status === 'not_uploaded').length;
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/profile');
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <Header title="Document Verification" showBack onBackPress={() => router.back()} />
+        <Header title="Document Verification" showBack onBackPress={handleBack} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color={Colors.primary.blue} />
         </View>
@@ -162,7 +224,8 @@ export default function DocumentVerificationScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Header title="Document Verification" showBack onBackPress={() => router.back()} />
+      <Header title="Document Verification" showBack onBackPress={handleBack} />
+
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Stats */}
@@ -180,37 +243,49 @@ export default function DocumentVerificationScreen() {
           ))}
         </View>
 
+        {/* Warning Banner for Unuploaded Documents */}
+        {(notUploaded > 0 || rejected > 0) && (
+          <View style={styles.warningBanner}>
+            <AlertCircle size={20} color="#B45309" />
+            <View style={styles.warningContent}>
+              <Text style={styles.warningTitle}>Warning: Missing Mandatory Documents</Text>
+              <Text style={styles.warningText}>
+                {notUploaded} document(s) are pending upload. You must upload all required documents to verify your profile.
+              </Text>
+            </View>
+          </View>
+        )}
+
+
         {/* Upload area */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Upload New Document</Text>
-          <TouchableOpacity style={styles.uploadBox} onPress={() => handleUpload('Document')}>
+          <TouchableOpacity
+            style={styles.uploadBox}
+            onPress={() => triggerFilePicker()}
+            activeOpacity={0.8}
+          >
             <View style={styles.uploadIcon}>
               <Upload size={32} color={Colors.primary.blue} />
             </View>
             <Text style={styles.uploadMain}>Tap to upload a document</Text>
             <Text style={styles.uploadSub}>PDF, JPG, PNG — Max 5MB per file</Text>
-            <View style={styles.selectBtn}>
+            <TouchableOpacity
+              style={styles.selectBtn}
+              onPress={() => triggerFilePicker()}
+              activeOpacity={0.7}
+            >
               <Text style={styles.selectBtnText}>Choose File</Text>
-            </View>
+            </TouchableOpacity>
           </TouchableOpacity>
         </View>
 
+
+
         {/* Document List */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Required Documents</Text>
-          {docs.filter(d => d.required).map(doc => (
-            <DocumentCard
-              key={doc.id}
-              doc={doc}
-              onUpload={handleUpload}
-              getStatusColor={getStatusColor}
-              getStatusIcon={getStatusIcon}
-              getStatusLabel={getStatusLabel}
-            />
-          ))}
-
-          <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Optional Documents</Text>
-          {docs.filter(d => !d.required).map(doc => (
+          <Text style={styles.sectionTitle}>Required Mandatory Documents</Text>
+          {docs.map(doc => (
             <DocumentCard
               key={doc.id}
               doc={doc}
@@ -221,6 +296,7 @@ export default function DocumentVerificationScreen() {
             />
           ))}
         </View>
+
 
         {/* Notes */}
         <View style={styles.section}>
@@ -268,9 +344,13 @@ function DocumentCard({ doc, onUpload, getStatusColor, getStatusIcon, getStatusL
         </View>
         <View style={styles.docMeta}>
           <View style={styles.docNameRow}>
-            <Text style={styles.docName}>{doc.name}</Text>
-            {doc.required && <Text style={styles.requiredBadge}>Required</Text>}
+            <Text style={styles.docName}>
+              {doc.name}
+              {doc.required && <Text style={styles.asteriskText}> *</Text>}
+            </Text>
+            {doc.required && <Text style={styles.requiredBadge}>REQUIRED *</Text>}
           </View>
+
           <View style={styles.docStatusRow}>
             <Text style={[styles.docStatusText, { color }]}>{getStatusLabel(doc.status)}</Text>
             {doc.file_url && (
@@ -326,7 +406,24 @@ const styles = StyleSheet.create({
   statVal: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
   statLabel: { fontSize: 9, color: Colors.gray.text, fontWeight: '600', textTransform: 'uppercase', textAlign: 'center' },
 
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+    marginHorizontal: 14,
+    marginTop: 14,
+  },
+  warningContent: { flex: 1 },
+  warningTitle: { fontSize: 13, fontWeight: '700', color: '#92400E', marginBottom: 2 },
+  warningText: { fontSize: 12, color: '#B45309', lineHeight: 16 },
+
   section: { paddingHorizontal: 14, marginTop: 20 },
+
   sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.dark, marginBottom: 12 },
 
   uploadBox: {
@@ -381,16 +478,21 @@ const styles = StyleSheet.create({
   docMeta: { flex: 1 },
   docNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   docName: { fontSize: 14, fontWeight: '700', color: Colors.dark, flex: 1 },
+  asteriskText: { color: '#EF4444', fontWeight: '800', fontSize: 15 },
   requiredBadge: {
     fontSize: 9,
-    fontWeight: '700',
-    color: Colors.primary.blue,
-    backgroundColor: Colors.primary.blue + '15',
-    paddingHorizontal: 6,
+    fontWeight: '800',
+    color: '#DC2626',
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 5,
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
+
   docStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   docStatusText: { fontSize: 12, fontWeight: '600' },
   fileName: { fontSize: 11, color: Colors.gray.text, flex: 1 },

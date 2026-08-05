@@ -9,6 +9,7 @@ from ..utils.dependencies import get_current_user
 router = APIRouter()
 
 
+@router.get("", response_model=list[NotificationRead])
 @router.get("/", response_model=list[NotificationRead])
 def list_notifications(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     return db.query(Notification).filter(Notification.user_id == current_user.id).order_by(Notification.created_at.desc()).all()

@@ -35,12 +35,12 @@ export default function NotificationsScreen() {
       try {
         setLoading(true);
         const data = await getNotifications(token);
-        if (data && Array.isArray(data) && data.length > 0) {
+        if (data && Array.isArray(data)) {
           setNotifications(data);
           return;
         }
       } catch (error) {
-        // Fallback to local store notifications if backend API is unavailable
+        // Fallback to local store notifications only if network request fails
       } finally {
         setLoading(false);
       }

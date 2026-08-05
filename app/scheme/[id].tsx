@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
-import { Bookmark, Share2, Users, Calendar, Building, ChevronRight, CircleCheck, CircleAlert as AlertCircle, FileText } from 'lucide-react-native';
+import { Bookmark, Share2, Users, Calendar, Building, ChevronRight, CircleCheck, CircleAlert as AlertCircle, FileText, AlertTriangle } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { AppButton, Header } from '@/components/ui';
 import { useSchemeStore } from '@/store/schemeStore';
 import { getScheme } from '@/lib/api';
+import { isSchemeExpired } from '@/lib/schemeUtils';
+import { syncAndOpenOfficialPortal } from '@/lib/portalSyncEngine';
+import { useApplicationDraftStore } from '@/store/applicationDraftStore';
+import { evaluateAndProceedScheme } from '@/lib/eligibilityEngine';
+import { useAuthStore } from '@/store/authStore';
+
 
 interface Scheme {
   id: string;
@@ -16,6 +22,8 @@ interface Scheme {
   category: string;
   documents_required: string[];
   featured: boolean;
+  deadline?: string;
+  status?: string;
   eligibility?: { requirements?: string[] };
 }
 
@@ -38,12 +46,29 @@ export default function SchemeDetailsScreen() {
       if (data) {
         setScheme(data);
         setSaved(isSchemeSaved(data.id));
+        return;
       }
     } catch (error) {
-      console.error('Error loading scheme:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error loading scheme from API, falling back to local store:', error);
     }
+
+    // Fallback to local store scheme data
+    const localScheme = useSchemeStore.getState().getSchemeById(id as string);
+    if (localScheme) {
+      setScheme({
+        id: localScheme.id,
+        name: localScheme.name,
+        description: localScheme.description,
+        category: localScheme.category,
+        documents_required: localScheme.documents,
+        featured: localScheme.featured,
+        deadline: localScheme.deadline,
+        status: localScheme.status,
+        eligibility: { requirements: localScheme.eligibility },
+      });
+      setSaved(isSchemeSaved(localScheme.id));
+    }
+    setLoading(false);
   };
 
   const handleSave = () => {
@@ -58,10 +83,22 @@ export default function SchemeDetailsScreen() {
   };
 
   const handleApply = () => {
-    if (scheme) {
+    if (scheme && !isSchemeExpired(scheme as any)) {
       router.push(`/apply/${scheme.id}`);
     }
   };
+
+  const handleApplyOfficial = async () => {
+    if (scheme) {
+      const user = useAuthStore.getState().user;
+      const createApplication = useSchemeStore.getState().createApplication;
+      evaluateAndProceedScheme(scheme, user, createApplication);
+    } else {
+      Linking.openURL('https://services.india.gov.in');
+    }
+  };
+
+
 
   const handleCheckEligibility = () => {
     if (scheme) {
@@ -88,6 +125,8 @@ export default function SchemeDetailsScreen() {
     );
   }
 
+  const expired = isSchemeExpired(scheme as any);
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -110,6 +149,18 @@ export default function SchemeDetailsScreen() {
         </View>
 
         <View style={styles.content}>
+          {expired && (
+            <View style={styles.expiredBanner}>
+              <AlertTriangle size={20} color="#991B1B" />
+              <View style={styles.expiredBannerContent}>
+                <Text style={styles.expiredBannerTitle}>Application Window Expired / Closed</Text>
+                <Text style={styles.expiredBannerText}>
+                  The official deadline for this scheme was {(scheme as any)?.deadline || 'expired'}. Applications are no longer accepted on the portal.
+                </Text>
+              </View>
+            </View>
+          )}
+
           <Text style={styles.category}>{scheme.category}</Text>
           <Text style={styles.title}>{scheme.name}</Text>
 
@@ -185,13 +236,21 @@ export default function SchemeDetailsScreen() {
 
       <View style={styles.footer}>
         <AppButton
-          title="Apply Now"
-          onPress={handleApply}
+          title={expired ? "Application Window Expired" : "Check Eligibility & Apply"}
+          onPress={expired ? () => {} : handleCheckEligibility}
+          disabled={expired}
           fullWidth
-          icon={<ChevronRight size={20} color={Colors.white} />}
+          style={expired ? styles.disabledBtn : undefined}
+          icon={<ChevronRight size={18} color={Colors.white} />}
           iconPosition="right"
         />
+        <Text style={styles.officialNote}>
+          {expired ? '⚠️ Deadline ended on official portal' : '📋 Eligibility verification required before official portal redirection.'}
+        </Text>
       </View>
+
+
+
     </SafeAreaView>
   );
 }
@@ -384,5 +443,47 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopWidth: 1,
     borderTopColor: Colors.gray.border,
+  },
+  footerButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+  officialNote: {
+    fontSize: 12,
+    color: Colors.gray.text,
+    textAlign: 'center',
+    marginTop: 10,
+    lineHeight: 16,
+  },
+  disabledBtn: {
+    opacity: 0.5,
+  },
+
+
+  expiredBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+  },
+  expiredBannerContent: {
+    flex: 1,
+  },
+  expiredBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#991B1B',
+    marginBottom: 2,
+  },
+  expiredBannerText: {
+    fontSize: 12,
+    color: '#7F1D1D',
+    lineHeight: 17,
   },
 });

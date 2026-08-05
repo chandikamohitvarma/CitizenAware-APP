@@ -44,12 +44,16 @@ export interface Scheme {
   eligibility: string[];
   documents: string[];
   deadline: string;
-  status: 'active' | 'inactive' | 'upcoming';
+  status: 'active' | 'inactive' | 'upcoming' | 'expired' | 'closed';
   applied: number;
   featured: boolean;
   image?: string;
   state?: string;
+  officialUrl?: string;
+  source_url?: string;
+  target_audience?: string;
 }
+
 
 
 export interface Category {
@@ -83,6 +87,8 @@ export interface Application {
   submittedAt: string;
   updatedAt: string;
   documents: Document[];
+  referenceNumber?: string;
+  dbSynced?: boolean;
 }
 
 export interface Document {
